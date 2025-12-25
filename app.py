@@ -36,7 +36,18 @@ def login_gmao():
         return jsonify({"status": "error", "message": "Identifiants incorrects"}), 401
     except Exception as e:
         return jsonify({"status": "error", "message": str(e)}), 500
-
+@app.route('/debug_users')
+def debug_users():
+    try:
+        conn = psycopg2.connect(DB_URL)
+        cur = conn.cursor()
+        cur.execute("SELECT username, password_hash, nom_complet FROM gmao_users")
+        users = cur.fetchall()
+        cur.close()
+        conn.close()
+        return jsonify(users)
+    except Exception as e:
+        return str(e)
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 10000))
     app.run(host='0.0.0.0', port=port)
