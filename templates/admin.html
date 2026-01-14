@@ -1,69 +1,95 @@
-<div id="debug-console" style="background: #000; color: #00ff00; font-family: monospace; font-size: 12px; padding: 15px; height: 150px; overflow-y: auto; border-top: 2px solid #38bdf8; margin-top: 20px;">
-    <div>> Initialisation du système...</div>
-</div>
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>GMAO - Administration</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body { background: #0d1117; color: white; display: flex; height: 100vh; margin: 0; font-family: sans-serif; }
+        .sidebar { width: 250px; background: #161b22; border-right: 1px solid #30363d; padding: 20px; }
+        .main { flex: 1; padding: 30px; overflow-y: auto; }
+        .card { background: #161b22; border: 1px solid #30363d; border-radius: 8px; padding: 20px; margin-bottom: 20px; }
+        .nav-item { padding: 12px; cursor: pointer; border-radius: 6px; margin-bottom: 5px; color: #8b949e; }
+        .nav-item:hover, .nav-item.active { background: #1f6feb; color: white; }
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+        th { text-align: left; color: #58a6ff; padding: 10px; border-bottom: 2px solid #30363d; }
+        td { padding: 10px; border-bottom: 1px solid #21262d; }
+        input, select { background: #0d1117; border: 1px solid #30363d; color: white; padding: 8px; border-radius: 4px; }
+        #debug-console { background: #000; color: #00ff00; font-family: monospace; height: 120px; overflow-y: auto; padding: 10px; font-size: 11px; border: 1px solid #333; }
+    </style>
+</head>
+<body>
+    <div class="sidebar">
+        <h2>GMAO ADMIN</h2>
+        <div class="nav-item active" onclick="showSection('users')">👥 Équipe</div>
+        <div class="nav-item" onclick="showSection('lignes')">🏭 Lignes</div>
+        <div class="nav-item" onclick="showSection('inter')">📋 Interventions</div>
+        <button onclick="window.location.href='/'" style="width:100%; margin-top:20px;">Quitter</button>
+    </div>
 
-<script>
-    // Fonction pour écrire dans notre console personnalisée
-    function logDebug(message, isError = false) {
-        const consoleDiv = document.getElementById('debug-console');
-        const time = new Date().toLocaleTimeString();
-        const color = isError ? '#ff4444' : '#00ff00';
-        consoleDiv.innerHTML += `<div style="color: ${color}">[${time}] ${message}</div>`;
-        consoleDiv.scrollTop = consoleDiv.scrollHeight; // Scroll automatique vers le bas
-    }
+    <div class="main">
+        <div id="section-users" class="admin-section">
+            <div class="card">
+                <h3>Ajouter un collaborateur</h3>
+                <div style="display:flex; gap:10px;">
+                    <input type="text" id="u-nom" placeholder="Nom Complet">
+                    <input type="text" id="u-pin" placeholder="Code PIN">
+                    <select id="u-role"><option value="referent">Référent</option><option value="technicien">Technicien</option></select>
+                    <button onclick="addUser()">Ajouter</button>
+                </div>
+            </div>
+            <div class="card">
+                <table>
+                    <thead><tr><th>Nom</th><th>Rôle</th><th>Code</th><th>Action</th></tr></thead>
+                    <tbody id="table-users"></tbody>
+                </table>
+            </div>
+        </div>
 
-    // On remplace la fonction addUser par celle-ci pour voir les erreurs
-    async function addUser() {
-        logDebug("Tentative d'ajout d'utilisateur...");
-        const nom = document.getElementById('u-nom').value;
-        const pin = document.getElementById('u-pin').value;
-        const role = document.getElementById('u-role').value;
+        <div id="section-lignes" class="admin-section" style="display:none;">
+            <div class="card">
+                <h3>Nouvelle Ligne</h3>
+                <input type="text" id="l-nom" placeholder="Nom de la ligne">
+                <button onclick="addLigne()">Créer</button>
+                <ul id="list-lignes" style="margin-top:15px;"></ul>
+            </div>
+        </div>
 
-        if(!nom || !pin) {
-            logDebug("Erreur : Nom ou PIN manquant", true);
-            return alert("Remplissez le nom et le code PIN");
+        <div id="debug-console">--- CONSOLE DE DEBUG ---</div>
+    </div>
+
+    <script>
+        function log(msg, err=false) {
+            const c = document.getElementById('debug-console');
+            c.innerHTML += `<div style="color:${err?'red':'#0f0'}">>> ${msg}</div>`;
+            c.scrollTop = c.scrollHeight;
         }
 
-        try {
-            const res = await fetch('/api/admin/users', { 
-                method: 'POST', 
-                headers: {'Content-Type': 'application/json'}, 
-                body: JSON.stringify({ nom, username: nom, password: pin, role }) 
-            });
-
-            const result = await res.json();
-            
-            if(res.ok) {
-                logDebug(`Succès : Profil ${nom} créé !`);
-                loadUsers();
-            } else {
-                logDebug(`Erreur Serveur : ${result.message}`, true);
-            }
-        } catch (err) {
-            logDebug(`Erreur Réseau : ${err.message}`, true);
+        async function addUser() {
+            const data = { nom: document.getElementById('u-nom').value, username: document.getElementById('u-nom').value, password: document.getElementById('u-pin').value, role: document.getElementById('u-role').value };
+            log("Envoi utilisateur: " + data.nom);
+            const res = await fetch('/api/admin/users', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(data) });
+            if(res.ok) { log("Succès !"); loadUsers(); } else { log("Erreur création", true); }
         }
-    }
 
-    // Applique la même logique à loadUsers pour voir si le chargement échoue
-    async function loadUsers() {
-        try {
+        async function loadUsers() {
             const res = await fetch('/api/admin/users');
-            if(!res.ok) throw new Error("Impossible de lire la liste des utilisateurs");
             const data = await res.json();
-            logDebug(`${data.length} utilisateurs chargés.`);
-            
-            const tbody = document.getElementById('table-users-body');
-            tbody.innerHTML = "";
+            const tb = document.getElementById('table-users');
+            tb.innerHTML = "";
             data.forEach(u => {
-                tbody.innerHTML += `<tr>
-                    <td>${u.nom_complet}</td>
-                    <td>${u.role}</td>
-                    <td>${u.password_hash}</td>
-                    <td><button class="btn-action btn-danger" onclick="deleteUser(${u.id})">X</button></td>
-                </tr>`;
+                tb.innerHTML += `<tr><td>${u.nom_complet}</td><td>${u.role}</td><td>${u.password_hash}</td><td><button onclick="deleteUser(${u.id})">X</button></td></tr>`;
             });
-        } catch (err) {
-            logDebug(err.message, true);
+            log(data.length + " profils chargés.");
         }
-    }
-</script>
+
+        function showSection(id) {
+            document.querySelectorAll('.admin-section').forEach(s => s.style.display = 'none');
+            document.getElementById('section-'+id).style.display = 'block';
+        }
+
+        window.onload = loadUsers;
+    </script>
+</body>
+</html>
