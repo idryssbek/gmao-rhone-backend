@@ -9,12 +9,10 @@
         .grid-users { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 15px; margin-top: 15px; }
         .keypad { display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; max-width: 250px; margin: 20px auto; }
         .key { width: 65px; height: 65px; border-radius: 50%; border: 1px solid rgba(255,255,255,0.1); background: rgba(255,255,255,0.05); color: white; font-size: 1.4rem; display: flex; align-items: center; justify-content: center; cursor: pointer; }
-        .key:active { background: var(--accent-blue); }
+        .key:active { background: var(--accent-orange); } /* Orange car seuls les techs utilisent le clavier désormais */
         .dots { display: flex; justify-content: center; gap: 12px; margin-bottom: 20px; }
-        .dot { width: 12px; height: 12px; border: 2px solid var(--accent-blue); border-radius: 50%; }
-        .dot.active { background: var(--accent-blue); box-shadow: 0 0 10px var(--accent-blue); }
-        
-        /* Cacher les sections par défaut pour le filtrage */
+        .dot { width: 12px; height: 12px; border: 2px solid var(--accent-orange); border-radius: 50%; }
+        .dot.active { background: var(--accent-orange); box-shadow: 0 0 10px var(--accent-orange); }
         #section-tech, #section-ref { display: none; }
     </style>
 </head>
@@ -24,7 +22,7 @@
             <h1 id="page-title">Identification</h1>
             
             <div id="section-tech">
-                <h3 style="color: var(--accent-orange); text-align: left;">🛠️ Staff Technique</h3>
+                <h3 style="color: var(--accent-orange); text-align: left;">🛠️ Staff Technique (Accès Sécurisé)</h3>
                 <div class="grid-users">
                     <div class="card-user tech-card" onclick="showKeypad('Sébastien', 'technicien')"><div class="avatar tech-avatar">S</div><span>Sébastien</span></div>
                     <div class="card-user tech-card" onclick="showKeypad('Henri', 'technicien')"><div class="avatar tech-avatar">H</div><span>Henri</span></div>
@@ -33,21 +31,19 @@
             </div>
 
             <div id="section-ref">
-                <h3 style="color: var(--accent-blue); text-align: left; margin-top: 2rem;">👥 Référents Production</h3>
+                <h3 style="color: var(--accent-blue); text-align: left; margin-top: 2rem;">👥 Référents Production (Accès Direct)</h3>
                 <div class="grid-users">
-                    <div class="card-user" onclick="showKeypad('Marine.B', 'referent')"><div class="avatar">MB</div><span>Marine.B</span></div>
-                    <div class="card-user" onclick="showKeypad('Clarisse', 'referent')"><div class="avatar">C</div><span>Clarisse</span></div>
-                    <div class="card-user" onclick="showKeypad('Marie-Laure', 'referent')"><div class="avatar">ML</div><span>M-Laure</span></div>
-                    <div class="card-user" onclick="showKeypad('Karen', 'referent')"><div class="avatar">K</div><span>Karen</span></div>
-                    <div class="card-user" onclick="showKeypad('Marine.C', 'referent')"><div class="avatar">MC</div><span>Marine.C</span></div>
-                    <div class="card-user" onclick="showKeypad('Mélanie', 'referent')"><div class="avatar">M</div><span>Mélanie</span></div>
-                    <div class="card-user" onclick="showKeypad('Anne-Marie', 'referent')"><div class="avatar">AM</div><span>A-Marie</span></div>
-                    <div class="card-user" onclick="showKeypad('Nicolas', 'referent')"><div class="avatar">N</div><span>Nicolas</span></div>
-                    <div class="card-user" onclick="showKeypad('Nassim', 'referent')"><div class="avatar">N</div><span>Nassim</span></div>
+                    <div class="card-user" onclick="connexionDirecte('Marine.B', 4)"><div class="avatar">MB</div><span>Marine.B</span></div>
+                    <div class="card-user" onclick="connexionDirecte('Clarisse', 5)"><div class="avatar">C</div><span>Clarisse</span></div>
+                    <div class="card-user" onclick="connexionDirecte('Marie-Laure', 6)"><div class="avatar">ML</div><span>M-Laure</span></div>
+                    <div class="card-user" onclick="connexionDirecte('Karen', 7)"><div class="avatar">K</div><span>Karen</span></div>
+                    <div class="card-user" onclick="connexionDirecte('Marine.C', 8)"><div class="avatar">MC</div><span>Marine.C</span></div>
+                    <div class="card-user" onclick="connexionDirecte('Mélanie', 9)"><div class="avatar">M</div><span>Mélanie</span></div>
+                    <div class="card-user" onclick="connexionDirecte('Anne-Marie', 10)"><div class="avatar">AM</div><span>A-Marie</span></div>
+                    <div class="card-user" onclick="connexionDirecte('Nicolas', 11)"><div class="avatar">N</div><span>Nicolas</span></div>
+                    <div class="card-user" onclick="connexionDirecte('Nassim', 12)"><div class="avatar">N</div><span>Nassim</span></div>
                 </div>
             </div>
-            
-            <button onclick="window.location.href='/'" style="background:none; border:none; color:var(--text-dim); cursor:pointer; margin-top:30px;">← Retour</button>
         </div>
 
         <div id="step-pin" style="display:none;">
@@ -65,25 +61,30 @@
     <script>
         let currentPin = "";
         let selectedName = "";
-        let selectedRole = "";
 
-        // FILTRAGE AU CHARGEMENT
         window.onload = function() {
             const urlParams = new URLSearchParams(window.location.search);
             const role = urlParams.get('role');
-            
             if (role === 'technicien') {
                 document.getElementById('section-tech').style.display = 'block';
-                document.getElementById('page-title').innerText = "Accès Technicien";
+                document.getElementById('page-title').innerText = "Espace Staff";
             } else {
                 document.getElementById('section-ref').style.display = 'block';
-                document.getElementById('page-title').innerText = "Accès Référent";
+                document.getElementById('page-title').innerText = "Espace Référent";
             }
         }
 
-        function showKeypad(name, role) {
+        // --- LOGIQUE RÉFÉRENT (Direct) ---
+        function connexionDirecte(nom, id) {
+            localStorage.setItem('user_id', id);
+            localStorage.setItem('user_nom', nom);
+            localStorage.setItem('user_role', 'referent');
+            window.location.href = '/page_referent';
+        }
+
+        // --- LOGIQUE TECH (Avec PIN) ---
+        function showKeypad(name) {
             selectedName = name;
-            selectedRole = role;
             document.getElementById('welcome-name').innerText = "Bonjour " + name;
             document.getElementById('step-names').style.display = 'none';
             document.getElementById('step-pin').style.display = 'block';
@@ -120,8 +121,8 @@
             if (data.status === "success") {
                 localStorage.setItem('user_id', data.id);
                 localStorage.setItem('user_nom', data.nom);
-                localStorage.setItem('user_role', selectedRole);
-                window.location.href = (selectedRole === 'technicien') ? '/page_technicien' : '/page_referent';
+                localStorage.setItem('user_role', 'technicien');
+                window.location.href = '/page_technicien';
             } else {
                 alert("Code PIN incorrect");
                 currentPin = ""; updateDots();
