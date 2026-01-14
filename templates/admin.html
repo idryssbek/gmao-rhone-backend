@@ -2,133 +2,232 @@
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>GMAO - Administration</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script> <style>
-        .admin-nav { display: flex; gap: 10px; margin-bottom: 20px; overflow-x: auto; padding-bottom: 10px; }
-        .nav-tab { padding: 10px 20px; background: #1a1f26; border: 1px solid #2d353f; color: white; cursor: pointer; border-radius: 8px; white-space: nowrap; }
-        .nav-tab.active { background: #38bdf8; color: black; font-weight: bold; }
-        .tab-content { display: none; background: #1a1f26; padding: 20px; border-radius: 12px; border: 1px solid #2d353f; }
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root { --accent: #38bdf8; --danger: #ef4444; --success: #10b981; }
+        .admin-nav { display: flex; gap: 10px; margin-bottom: 25px; border-bottom: 1px solid #2d353f; padding-bottom: 10px; overflow-x: auto; }
+        .nav-tab { padding: 12px 20px; background: #1a1f26; border: 1px solid #2d353f; color: #94a3b8; cursor: pointer; border-radius: 8px; font-weight: 600; white-space: nowrap; }
+        .nav-tab.active { background: var(--accent); color: #000; border-color: var(--accent); }
+        
+        .tab-content { display: none; animation: fadeIn 0.3s ease; }
         .tab-content.active { display: block; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+        .admin-card { background: #1a1f26; border: 1px solid #2d353f; padding: 20px; border-radius: 12px; margin-bottom: 20px; }
+        .stat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(350px, 1fr)); gap: 20px; margin-bottom: 20px; }
         
-        .stat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; }
-        .card-stat { background: #0d1117; padding: 20px; border-radius: 10px; text-align: center; }
+        table { width: 100%; border-collapse: collapse; background: #1a1f26; border-radius: 8px; overflow: hidden; }
+        th { background: #2d353f; color: var(--accent); text-align: left; padding: 15px; font-size: 0.8rem; text-transform: uppercase; }
+        td { padding: 15px; border-bottom: 1px solid #2d353f; font-size: 0.9rem; }
         
-        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
-        th { background: #2d353f; color: #38bdf8; padding: 12px; text-align: left; }
-        td { padding: 12px; border-bottom: 1px solid #2d353f; }
+        .form-row { display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; }
+        input, select { background: #0d1117; border: 1px solid #333; color: white; padding: 10px; border-radius: 6px; flex: 1; }
         
-        .btn-del { background: #ef4444; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer; }
-        .btn-add { background: #10b981; color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; }
+        .btn { padding: 10px 15px; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; }
+        .btn-add { background: var(--success); color: white; }
+        .btn-del { background: var(--danger); color: white; padding: 5px 10px; }
+        .btn-export { background: #f59e0b; color: white; }
     </style>
 </head>
 <body>
-    <div class="main-container" style="max-width: 1200px;">
-        <header style="display: flex; justify-content: space-between; align-items: center;">
-            <h1>🛠️ Administration GMAO</h1>
-            <button onclick="window.location.href='/'" class="btn-secondary">Déconnexion</button>
+    <div class="main-container" style="max-width: 1300px;">
+        <header style="display:flex; justify-content: space-between; align-items: center; margin-bottom:30px;">
+            <div>
+                <h1 style="margin:0; color:var(--accent);">PONT DE COMMANDE ADMIN</h1>
+                <p style="color:#64748b; margin:0;">Gestion globale de la maintenance</p>
+            </div>
+            <button onclick="window.location.href='/'" class="btn" style="background:#333; color:white;">QUITTER</button>
         </header>
 
         <div class="admin-nav">
-            <div class="nav-tab active" onclick="openTab(event, 'stats')">📊 Statistiques</div>
-            <div class="nav-tab" onclick="openTab(event, 'interventions')">📋 Interventions</div>
-            <div class="nav-tab" onclick="openTab(event, 'equipe')">👥 Équipe & Codes</div>
-            <div class="nav-tab" onclick="openTab(event, 'lignes')">🏭 Lignes</div>
-            <div class="nav-tab" onclick="openTab(event, 'messages')">💬 Messages Opérateurs</div>
+            <button class="nav-tab active" onclick="showTab('tab-stats')">📊 STATISTIQUES</button>
+            <button class="nav-tab" onclick="showTab('tab-inter')">📋 INTERVENTIONS</button>
+            <button class="nav-tab" onclick="showTab('tab-team')">👥 ÉQUIPE</button>
+            <button class="nav-tab" onclick="showTab('tab-lignes')">🏭 LIGNES</button>
         </div>
 
-        <div id="stats" class="tab-content active">
+        <div id="tab-stats" class="tab-content active">
             <div class="stat-grid">
-                <div class="card-stat">
-                    <h3>Répartition par Ligne</h3>
-                    <canvas id="chartLignes"></canvas>
+                <div class="admin-card">
+                    <h3>Volume par Ligne</h3>
+                    <canvas id="chartLignes" height="250"></canvas>
                 </div>
-                <div class="card-stat">
-                    <h3>Charge par Technicien (Heures)</h3>
-                    <canvas id="chartTechs"></canvas>
+                <div class="admin-card">
+                    <h3>Performance Techniciens</h3>
+                    <canvas id="chartTechs" height="250"></canvas>
                 </div>
             </div>
         </div>
 
-        <div id="interventions" class="tab-content">
-            <div style="display:flex; justify-content: space-between; margin-bottom:15px;">
-                <h3>Gestion des données</h3>
-                <button class="btn-add" style="background:#3b82f6" onclick="exportData()">📥 EXPORT EXCEL/CSV</button>
+        <div id="tab-inter" class="tab-content">
+            <div class="admin-card">
+                <div style="display:flex; justify-content: space-between; align-items: center; margin-bottom:20px;">
+                    <h3>Historique complet</h3>
+                    <button class="btn btn-export" onclick="window.location.href='/api/export_csv'">📥 EXPORTER VERS EXCEL (.CSV)</button>
+                </div>
+                <div style="overflow-x:auto;">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Date</th><th>Ligne</th><th>Machine</th><th>Auteur</th><th>Détails</th><th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="table-inter"></tbody>
+                    </table>
+                </div>
             </div>
-            <table>
-                <thead>
-                    <tr>
-                        <th>Date</th><th>Ligne</th><th>Auteur</th><th>Détails</th><th>Actions</th>
-                    </tr>
-                </thead>
-                <tbody id="admin-table-inter"></tbody>
-            </table>
         </div>
 
-        <div id="equipe" class="tab-content">
-            <h3>Ajouter un profil</h3>
-            <div style="display:flex; gap:10px; margin-bottom:20px;">
-                <input type="text" id="new-nom" placeholder="Nom Complet">
-                <input type="text" id="new-pin" placeholder="Code PIN (Tech)">
-                <select id="new-role">
-                    <option value="referent">Référent</option>
-                    <option value="technicien">Technicien</option>
-                </select>
-                <button class="btn-add" onclick="addUser()">Ajouter</button>
+        <div id="tab-team" class="tab-content">
+            <div class="admin-card">
+                <h3>Ajouter un collaborateur</h3>
+                <div class="form-row">
+                    <input type="text" id="u-nom" placeholder="Nom d'usage">
+                    <input type="text" id="u-pin" placeholder="Code PIN">
+                    <select id="u-role">
+                        <option value="referent">Référent Prod</option>
+                        <option value="technicien">Technicien Mainte.</option>
+                    </select>
+                    <button class="btn btn-add" onclick="addUser()">AJOUTER</button>
+                </div>
+                <table>
+                    <thead><tr><th>Nom</th><th>Rôle</th><th>Code</th><th>Action</th></tr></thead>
+                    <tbody id="table-users"></tbody>
+                </table>
             </div>
-            <table id="table-users">
-                <thead><tr><th>Nom</th><th>Rôle</th><th>Code</th><th>Action</th></tr></thead>
-                <tbody id="admin-table-users"></tbody>
-            </table>
         </div>
 
-        <div id="lignes" class="tab-content">
-            <h3>Configuration des lignes</h3>
-            <div style="display:flex; gap:10px;">
-                <input type="text" id="new-ligne" placeholder="Nom de la ligne">
-                <button class="btn-add" onclick="addLigne()">Ajouter la ligne</button>
-            </div>
-            <ul id="list-lignes" style="margin-top:20px;"></ul>
-        </div>
-        
-        <div id="messages" class="tab-content">
-            <h3>Alertes Opérateurs</h3>
-            <div id="op-messages-list">
-                <p style="color:#666">Aucun nouveau message opérateur.</p>
+        <div id="tab-lignes" class="tab-content">
+            <div class="admin-card">
+                <h3>Gestion des Lignes de Production</h3>
+                <div class="form-row">
+                    <input type="text" id="l-nom" placeholder="Nom de la nouvelle ligne">
+                    <button class="btn btn-add" onclick="addLigne()">CRÉER LA LIGNE</button>
+                </div>
+                <ul id="list-lignes" style="list-style:none; padding:0;"></ul>
             </div>
         </div>
+
     </div>
 
     <script>
-        // Gestion des onglets
-        function openTab(evt, tabName) {
-            let contents = document.getElementsByClassName("tab-content");
-            for (let c of contents) c.classList.remove("active");
-            let tabs = document.getElementsByClassName("nav-tab");
-            for (let t of tabs) t.classList.remove("active");
-            document.getElementById(tabName).classList.add("active");
-            evt.currentTarget.classList.add("active");
-            if(tabName === 'stats') loadCharts();
+        // NAVIGATION
+        function showTab(id) {
+            document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.nav-tab').forEach(b => b.classList.remove('active'));
+            document.getElementById(id).classList.add('active');
+            event.currentTarget.classList.add('active');
+            if(id === 'tab-stats') initCharts();
         }
 
-        // --- Fonctions API (A relier à app.py) ---
-        
-        async function loadCharts() {
-            // Ici on appellera une route /api/stats pour Chart.js
-            
+        // --- GESTION DES LIGNES ---
+        async function loadLignes() {
+            const res = await fetch('/api/lignes');
+            const data = await res.json();
+            const list = document.getElementById('list-lignes');
+            list.innerHTML = "";
+            data.forEach(l => {
+                list.innerHTML += `<li style="display:flex; justify-content:space-between; padding:10px; border-bottom:1px solid #333;">
+                    ${l.nom_ligne} <button class="btn-del" onclick="deleteLigne(${l.id})">Supprimer</button>
+                </li>`;
+            });
         }
-
-        async function exportData() {
-            window.open('/api/export_csv', '_blank');
+        async function addLigne() {
+            const nom = document.getElementById('l-nom').value;
+            await fetch('/api/lignes', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({nom}) });
+            document.getElementById('l-nom').value = ""; loadLignes();
         }
-
-        // Fonctions pour supprimer, ajouter, etc...
-        async function deleteIntervention(id) {
-            if(confirm("Supprimer définitivement ?")) {
-                await fetch(`/api/admin/delete_inter/${id}`, {method: 'DELETE'});
-                // Recharger la liste
+        async function deleteLigne(id) {
+            if(confirm("Supprimer cette ligne ?")) {
+                await fetch(`/api/lignes/${id}`, { method: 'DELETE' }); loadLignes();
             }
         }
+
+        // --- GESTION EQUIPE ---
+        async function loadUsers() {
+            const res = await fetch('/api/admin/users');
+            const data = await res.json();
+            const tbody = document.getElementById('table-users');
+            tbody.innerHTML = "";
+            data.forEach(u => {
+                tbody.innerHTML += `<tr>
+                    <td>${u.nom_complet}</td>
+                    <td>${u.role}</td>
+                    <td><code>${u.password_hash}</code></td>
+                    <td><button class="btn-del" onclick="deleteUser(${u.id})">X</button></td>
+                </tr>`;
+            });
+        }
+        async function addUser() {
+            const data = {
+                nom: document.getElementById('u-nom').value,
+                username: document.getElementById('u-nom').value,
+                password: document.getElementById('u-pin').value,
+                role: document.getElementById('u-role').value
+            };
+            await fetch('/api/admin/users', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(data) });
+            loadUsers();
+        }
+        async function deleteUser(id) {
+            if(confirm("Supprimer cet utilisateur ?")) {
+                await fetch(`/api/admin/users/${id}`, { method: 'DELETE' }); loadUsers();
+            }
+        }
+
+        // --- GESTION INTERVENTIONS ---
+        async function loadInterventions() {
+            const res = await fetch('/api/historique_complet');
+            const data = await res.json();
+            const tbody = document.getElementById('table-inter');
+            tbody.innerHTML = "";
+            data.forEach(i => {
+                tbody.innerHTML += `<tr>
+                    <td>${new Date(i.date_saisie).toLocaleDateString()}</td>
+                    <td>${i.ligne_production}</td>
+                    <td>${i.machine_num}</td>
+                    <td>${i.nom_complet || i.nom_operateur_intervenant}</td>
+                    <td style="font-size:0.8rem">${i.description}</td>
+                    <td><button class="btn-del" onclick="deleteInter(${i.id})">DEL</button></td>
+                </tr>`;
+            });
+        }
+        async function deleteInter(id) {
+            if(confirm("Supprimer définitivement cette donnée ?")) {
+                await fetch(`/api/admin/delete_inter/${id}`, { method: 'DELETE' }); loadInterventions();
+            }
+        }
+
+        // --- GRAPHIQUES ---
+        let chartL, chartT;
+        async function initCharts() {
+            const res = await fetch('/api/historique_complet');
+            const data = await res.json();
+            
+            // Calculer répartition par ligne
+            const lignesData = {};
+            data.forEach(i => lignesData[i.ligne_production] = (lignesData[i.ligne_production] || 0) + 1);
+
+            if(chartL) chartL.destroy();
+            chartL = new Chart(document.getElementById('chartLignes'), {
+                type: 'doughnut',
+                data: {
+                    labels: Object.keys(lignesData),
+                    datasets: [{ data: Object.values(lignesData), backgroundColor: ['#38bdf8', '#10b981', '#fb923c', '#ef4444', '#a855f7'] }]
+                },
+                options: { plugins: { legend: { position: 'bottom' } } }
+            });
+        }
+
+        // Initialisation au chargement
+        window.onload = () => {
+            loadLignes();
+            loadUsers();
+            loadInterventions();
+            initCharts();
+        };
     </script>
 </body>
 </html>
