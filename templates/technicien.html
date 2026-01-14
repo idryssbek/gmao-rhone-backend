@@ -3,138 +3,115 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>GMAO - Espace Technicien</title>
+    <title>GMAO - Espace Tech</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
     <style>
-        .tech-grid { display: grid; grid-template-columns: 1fr; gap: 30px; margin-top: 20px; }
-        .section-box { background: rgba(255,255,255,0.03); border: 1px solid #2d353f; border-radius: 15px; padding: 20px; }
-        
-        /* Formulaire rapide tech */
-        .quick-form { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; }
-        
-        /* Tableaux */
-        table { width: 100%; border-collapse: collapse; margin-top: 15px; font-size: 0.9rem; }
-        th { background: #1a1f26; color: #fb923c; padding: 12px; text-align: left; border-bottom: 2px solid #2d353f; }
-        td { padding: 12px; border-bottom: 1px solid rgba(255,255,255,0.05); }
-
-        /* Statuts */
-        .status-pill { padding: 4px 10px; border-radius: 20px; font-size: 0.75rem; font-weight: bold; text-transform: uppercase; }
-        .statut-attente { background: rgba(251, 146, 60, 0.1); color: #fb923c; border: 1px solid #fb923c; }
-        .statut-saisi { background: rgba(16, 185, 129, 0.1); color: #10b981; border: 1px solid #10b981; }
-        
-        .btn-action { background: #38bdf8; color: #000; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-weight: bold; }
-        .btn-save { background: #fb923c; width: 100%; margin-top: 10px; padding: 12px; border-radius: 8px; border: none; font-weight: bold; cursor: pointer; }
+        .tech-box { background: #1a1f26; border: 1px solid #2d353f; border-radius: 12px; padding: 20px; margin-bottom: 25px; }
+        .input-group { display: flex; gap: 10px; margin-top: 15px; flex-wrap: wrap; }
+        input, select { background: #0d1117; border: 1px solid #333; color: white; padding: 12px; border-radius: 6px; flex: 1; min-width: 150px; }
+        table { width: 100%; border-collapse: collapse; margin-top: 15px; }
+        th { text-align: left; color: #fb923c; padding: 12px; border-bottom: 2px solid #2d353f; font-size: 0.8rem; }
+        td { padding: 12px; border-bottom: 1px solid #2d353f; font-size: 0.9rem; }
+        .status-badge { padding: 4px 8px; border-radius: 4px; font-size: 0.7rem; font-weight: bold; }
+        .todo { border: 1px solid #fb923c; color: #fb923c; }
+        .done { border: 1px solid #10b981; color: #10b981; }
+        .btn-validate { background: #38bdf8; border: none; padding: 6px 10px; border-radius: 4px; cursor: pointer; font-weight: bold; }
     </style>
 </head>
 <body>
     <div class="main-container">
-        <header style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-            <h1 style="color: #fb923c;">Tableau de Bord Technique</h1>
-            <button onclick="window.location.href='/'" class="btn-secondary">QUITTER</button>
+        <header style="display:flex; justify-content: space-between; align-items: center; margin-bottom:20px;">
+            <h1 style="color: #fb923c;">Dashboard Maintenance</h1>
+            <button onclick="window.location.href='/'" class="btn-secondary">Sortir</button>
         </header>
 
-        <div class="tech-grid">
-            
-            <div class="section-box">
-                <h3 style="color: #fb923c;">🛠️ DÉCLARER UNE INTERVENTION</h3>
-                <div class="quick-form">
-                    <select id="ligne" class="user-case" style="width:100%; height:50px; background:#1a1f26; color:white; border:1px solid #333;">
-                        <option value="Ligne A">Ligne A</option>
-                        <option value="Ligne B">Ligne B</option>
-                        <option value="Ligne C">Ligne C</option>
-                        <option value="Ligne D">Ligne D</option>
-                    </select>
-                    <input type="text" id="desc" placeholder="Nature du travail fait..." style="background:#1a1f26; color:white; border:1px solid #333; padding:10px; border-radius:8px;">
-                </div>
-                <button class="btn-save" onclick="creerInterventionTech()">ENREGISTRER MON INTERVENTION</button>
+        <div class="tech-box">
+            <h3 style="margin:0;">🛠️ Saisie Rapide Technicien</h3>
+            <div class="input-group">
+                <select id="t-ligne">
+                    <option value="Ligne A">Ligne A</option><option value="Ligne B">Ligne B</option>
+                    <option value="Ligne C">Ligne C</option><option value="Ligne D">Ligne D</option>
+                </select>
+                <input type="text" id="t-machine" placeholder="N° Machine (ex: M01)">
+                <input type="text" id="t-temps" placeholder="Durée (ex: 45min)">
+                <input type="text" id="t-desc" placeholder="Nature du travail...">
             </div>
+            <button onclick="saveTechInter()" style="width:100%; margin-top:15px; padding:12px; background:#fb923c; border:none; border-radius:6px; font-weight:bold; cursor:pointer;">ENREGISTRER MON INTERVENTION</button>
+        </div>
 
-            <div class="section-box">
-                <h3 style="color: #38bdf8;">📋 SUIVI DES INTERVENTIONS (Référents + Techs)</h3>
-                <div style="overflow-x: auto;">
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>Date</th>
-                                <th>Ligne</th>
-                                <th>Auteur</th>
-                                <th>Description</th>
-                                <th>Statut GMAO</th>
-                                <th>Action</th>
-                            </tr>
-                        </thead>
-                        <tbody id="table-historique">
-                            </tbody>
-                    </table>
-                </div>
+        <div class="tech-box">
+            <h3 style="margin-bottom:15px; color:#38bdf8;">📋 Suivi des saisies GMAO</h3>
+            <div style="overflow-x:auto;">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>DATE</th>
+                            <th>LIGNE</th>
+                            <th>MACHINE</th>
+                            <th>AUTEUR</th>
+                            <th>DESCRIPTION / TEMPS</th>
+                            <th>STATUT</th>
+                            <th>ACTION</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tech-table-body"></tbody>
+                </table>
             </div>
-
         </div>
     </div>
 
     <script>
-        const techNom = localStorage.getItem('user_nom');
-        const techId = localStorage.getItem('user_id');
+        const myName = localStorage.getItem('user_nom');
+        const myId = localStorage.getItem('user_id');
 
-        async function loadAll() {
-            const response = await fetch('/api/historique_complet');
-            const data = await response.json();
-            const tbody = document.getElementById('table-historique');
+        async function loadTable() {
+            const res = await fetch('/api/historique_complet');
+            const data = await res.json();
+            const tbody = document.getElementById('tech-table-body');
             tbody.innerHTML = "";
-
-            data.forEach(item => {
-                const date = new Date(item.date_saisie).toLocaleDateString('fr-FR', {day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit'});
-                const estSaisi = item.statut === 'saisi_gmao';
-                
-                const row = `
+            data.forEach(i => {
+                const isDone = i.statut === 'saisi_gmao';
+                tbody.innerHTML += `
                     <tr>
-                        <td>${date}</td>
-                        <td><b>${item.ligne_production}</b></td>
-                        <td>${item.nom_complet || 'Tech'}</td>
-                        <td>${item.description}</td>
-                        <td>
-                            <span class="status-pill ${estSaisi ? 'statut-saisi' : 'statut-attente'}">
-                                ${estSaisi ? '✅ DANS GMAO' : '⏳ À SAISIR'}
-                            </span>
-                        </td>
-                        <td>
-                            ${!estSaisi ? `<button class="btn-action" onclick="cloturerGmao(${item.id})">VALIDER SAISIE</button>` : 'OK'}
-                        </td>
+                        <td>${new Date(i.date_saisie).toLocaleDateString('fr-FR', {day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit'})}</td>
+                        <td style="color:#38bdf8">${i.ligne_production}</td>
+                        <td><b>${i.machine_num}</b></td>
+                        <td>${i.nom_complet || i.nom_operateur_intervenant}</td>
+                        <td>${i.description}</td>
+                        <td><span class="status-badge ${isDone?'done':'todo'}">${isDone?'SAISI':'À SAISIR'}</span></td>
+                        <td>${!isDone? `<button class="btn-validate" onclick="validerGmao(${i.id})">VALIDER</button>` : '✅'}</td>
                     </tr>
                 `;
-                tbody.innerHTML += row;
             });
         }
 
-        async function creerInterventionTech() {
-            const desc = document.getElementById('desc').value;
-            if(!desc) return alert("Précisez le travail fait");
-            
+        async function saveTechInter() {
+            const desc = document.getElementById('t-desc').value;
+            const mach = document.getElementById('t-machine').value;
+            const temp = document.getElementById('t-temps').value;
+            if(!desc || !mach) return alert("Remplissez Machine et Description");
+
             await fetch('/api/save_intervention', {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
+                method: 'POST', headers: {'Content-Type': 'application/json'},
                 body: JSON.stringify({
-                    ligne: document.getElementById('ligne').value,
-                    machine: "TECH",
-                    nom_op: techNom,
-                    description: desc,
-                    id_referent: techId
+                    ligne: document.getElementById('t-ligne').value,
+                    machine: mach, nom_op: myName,
+                    description: desc + " (Temps: " + temp + ")",
+                    id_referent: myId
                 })
             });
-            document.getElementById('desc').value = "";
-            loadAll();
+            document.getElementById('t-desc').value = ""; document.getElementById('t-machine').value = "";
+            loadTable();
         }
 
-        async function cloturerGmao(id) {
+        async function validerGmao(id) {
             await fetch('/api/cloturer_gmao', {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({ id_intervention: id, id_tech: techNom })
+                method: 'POST', headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ id_intervention: id, id_tech: myName })
             });
-            loadAll();
+            loadTable();
         }
-
-        loadAll();
+        loadTable();
     </script>
 </body>
 </html>
