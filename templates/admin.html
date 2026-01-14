@@ -1,44 +1,134 @@
-<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
-<html>
+<!DOCTYPE html>
+<html lang="fr">
 <head>
-  <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
-  <meta http-equiv="Content-Style-Type" content="text/css">
-  <title></title>
-  <meta name="Generator" content="Cocoa HTML Writer">
-  <meta name="CocoaVersion" content="2575.2">
-  <style type="text/css">
-    span.s1 {font-kerning: none}
-  </style>
+    <meta charset="UTF-8">
+    <title>GMAO - Administration</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script> <style>
+        .admin-nav { display: flex; gap: 10px; margin-bottom: 20px; overflow-x: auto; padding-bottom: 10px; }
+        .nav-tab { padding: 10px 20px; background: #1a1f26; border: 1px solid #2d353f; color: white; cursor: pointer; border-radius: 8px; white-space: nowrap; }
+        .nav-tab.active { background: #38bdf8; color: black; font-weight: bold; }
+        .tab-content { display: none; background: #1a1f26; padding: 20px; border-radius: 12px; border: 1px solid #2d353f; }
+        .tab-content.active { display: block; }
+        
+        .stat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; }
+        .card-stat { background: #0d1117; padding: 20px; border-radius: 10px; text-align: center; }
+        
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+        th { background: #2d353f; color: #38bdf8; padding: 12px; text-align: left; }
+        td { padding: 12px; border-bottom: 1px solid #2d353f; }
+        
+        .btn-del { background: #ef4444; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer; }
+        .btn-add { background: #10b981; color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; }
+    </style>
 </head>
 <body>
-<h2 style="margin: 0.0px 0.0px 14.9px 0.0px; font: 10.0px Times; -webkit-text-stroke: #000000"><span class="s1"><b>&lt;!DOCTYPE html&gt;</b></span></h2>
-<h2 style="margin: 0.0px 0.0px 14.9px 0.0px; font: 10.0px Times; -webkit-text-stroke: #000000"><span class="s1"><b>&lt;html lang="fr"&gt;</b></span></h2>
-<h2 style="margin: 0.0px 0.0px 14.9px 0.0px; font: 10.0px Times; -webkit-text-stroke: #000000"><span class="s1"><b>&lt;head&gt;</b></span></h2>
-<h2 style="margin: 0.0px 0.0px 14.9px 0.0px; font: 10.0px Times; -webkit-text-stroke: #000000"><span class="s1"><b><span class="Apple-converted-space">    </span>&lt;meta charset="UTF-8"&gt;</b></span></h2>
-<h2 style="margin: 0.0px 0.0px 14.9px 0.0px; font: 10.0px Times; -webkit-text-stroke: #000000"><span class="s1"><b><span class="Apple-converted-space">    </span>&lt;meta name="viewport" content="width=device-width, initial-scale=1.0"&gt;</b></span></h2>
-<h2 style="margin: 0.0px 0.0px 14.9px 0.0px; font: 10.0px Times; -webkit-text-stroke: #000000"><span class="s1"><b><span class="Apple-converted-space">    </span>&lt;title&gt;GMAO - Saisie&lt;/title&gt;</b></span></h2>
-<h2 style="margin: 0.0px 0.0px 14.9px 0.0px; font: 10.0px Times; -webkit-text-stroke: #000000"><span class="s1"><b><span class="Apple-converted-space">    </span>&lt;style&gt;</b></span></h2>
-<h2 style="margin: 0.0px 0.0px 14.9px 0.0px; font: 10.0px Times; -webkit-text-stroke: #000000"><span class="s1"><b><span class="Apple-converted-space">        </span>body { font-family: sans-serif; background-color: #f0f2f5; padding: 15px; }</b></span></h2>
-<h2 style="margin: 0.0px 0.0px 14.9px 0.0px; font: 10.0px Times; -webkit-text-stroke: #000000"><span class="s1"><b><span class="Apple-converted-space">        </span>.form-card { background: white; padding: 20px; border-radius: 12px; max-width: 500px; margin: auto; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }</b></span></h2>
-<h2 style="margin: 0.0px 0.0px 14.9px 0.0px; font: 10.0px Times; -webkit-text-stroke: #000000"><span class="s1"><b><span class="Apple-converted-space">        </span>.form-group { margin-bottom: 15px; }</b></span></h2>
-<h2 style="margin: 0.0px 0.0px 14.9px 0.0px; font: 10.0px Times; -webkit-text-stroke: #000000"><span class="s1"><b><span class="Apple-converted-space">        </span>input, textarea, select { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 16px; }</b></span></h2>
-<h2 style="margin: 0.0px 0.0px 14.9px 0.0px; font: 10.0px Times; -webkit-text-stroke: #000000"><span class="s1"><b><span class="Apple-converted-space">        </span>.btn-submit { background-color: #28a745; color: white; border: none; padding: 15px; width: 100%; border-radius: 8px; font-size: 18px; cursor: pointer; }</b></span></h2>
-<h2 style="margin: 0.0px 0.0px 14.9px 0.0px; font: 10.0px Times; -webkit-text-stroke: #000000"><span class="s1"><b><span class="Apple-converted-space">    </span>&lt;/style&gt;</b></span></h2>
-<h2 style="margin: 0.0px 0.0px 14.9px 0.0px; font: 10.0px Times; -webkit-text-stroke: #000000"><span class="s1"><b>&lt;/head&gt;</b></span></h2>
-<h2 style="margin: 0.0px 0.0px 14.9px 0.0px; font: 10.0px Times; -webkit-text-stroke: #000000"><span class="s1"><b>&lt;body&gt;</b></span></h2>
-<h2 style="margin: 0.0px 0.0px 14.9px 0.0px; font: 10.0px Times; -webkit-text-stroke: #000000"><span class="s1"><b>&lt;div class="form-card"&gt;</b></span></h2>
-<h2 style="margin: 0.0px 0.0px 14.9px 0.0px; font: 10.0px Times; -webkit-text-stroke: #000000"><span class="s1"><b><span class="Apple-converted-space">    </span>&lt;h2&gt;Nouvelle Intervention&lt;/h2&gt;</b></span></h2>
-<h2 style="margin: 0.0px 0.0px 14.9px 0.0px; font: 10.0px Times; -webkit-text-stroke: #000000"><span class="s1"><b><span class="Apple-converted-space">    </span>&lt;form method="POST"&gt;</b></span></h2>
-<h2 style="margin: 0.0px 0.0px 14.9px 0.0px; font: 10.0px Times; -webkit-text-stroke: #000000"><span class="s1"><b><span class="Apple-converted-space">        </span>&lt;div class="form-group"&gt;&lt;label&gt;Machine&lt;/label&gt;&lt;input type="text" name="machine" required&gt;&lt;/div&gt;</b></span></h2>
-<h2 style="margin: 0.0px 0.0px 14.9px 0.0px; font: 10.0px Times; -webkit-text-stroke: #000000"><span class="s1"><b><span class="Apple-converted-space">        </span>&lt;div class="form-group"&gt;&lt;label&gt;Ligne&lt;/label&gt;&lt;input type="text" name="ligne" required&gt;&lt;/div&gt;</b></span></h2>
-<h2 style="margin: 0.0px 0.0px 14.9px 0.0px; font: 10.0px Times; -webkit-text-stroke: #000000"><span class="s1"><b><span class="Apple-converted-space">        </span>&lt;div class="form-group"&gt;&lt;label&gt;Cause&lt;/label&gt;&lt;textarea name="cause" required&gt;&lt;/textarea&gt;&lt;/div&gt;</b></span></h2>
-<h2 style="margin: 0.0px 0.0px 14.9px 0.0px; font: 10.0px Times; -webkit-text-stroke: #000000"><span class="s1"><b><span class="Apple-converted-space">        </span>&lt;div class="form-group"&gt;&lt;label&gt;Action&lt;/label&gt;&lt;textarea name="action" required&gt;&lt;/textarea&gt;&lt;/div&gt;</b></span></h2>
-<h2 style="margin: 0.0px 0.0px 14.9px 0.0px; font: 10.0px Times; -webkit-text-stroke: #000000"><span class="s1"><b><span class="Apple-converted-space">        </span>&lt;div class="form-group"&gt;&lt;label&gt;Temps&lt;/label&gt;&lt;input type="text" name="temps" required&gt;&lt;/div&gt;</b></span></h2>
-<h2 style="margin: 0.0px 0.0px 14.9px 0.0px; font: 10.0px Times; -webkit-text-stroke: #000000"><span class="s1"><b><span class="Apple-converted-space">        </span>&lt;button type="submit" class="btn-submit"&gt;Enregistrer&lt;/button&gt;</b></span></h2>
-<h2 style="margin: 0.0px 0.0px 14.9px 0.0px; font: 10.0px Times; -webkit-text-stroke: #000000"><span class="s1"><b><span class="Apple-converted-space">        </span>&lt;a href="{{ url_for('index') }}"&gt;Annuler&lt;/a&gt;</b></span></h2>
-<h2 style="margin: 0.0px 0.0px 14.9px 0.0px; font: 10.0px Times; -webkit-text-stroke: #000000"><span class="s1"><b><span class="Apple-converted-space">    </span>&lt;/form&gt;</b></span></h2>
-<h2 style="margin: 0.0px 0.0px 14.9px 0.0px; font: 10.0px Times; -webkit-text-stroke: #000000"><span class="s1"><b>&lt;/div&gt;</b></span></h2>
-<h2 style="margin: 0.0px 0.0px 14.9px 0.0px; font: 10.0px Times; -webkit-text-stroke: #000000"><span class="s1"><b>&lt;/body&gt;</b></span></h2>
-<h2 style="margin: 0.0px 0.0px 14.9px 0.0px; font: 10.0px Times; -webkit-text-stroke: #000000"><span class="s1"><b>&lt;/html&gt;</b></span></h2>
+    <div class="main-container" style="max-width: 1200px;">
+        <header style="display: flex; justify-content: space-between; align-items: center;">
+            <h1>🛠️ Administration GMAO</h1>
+            <button onclick="window.location.href='/'" class="btn-secondary">Déconnexion</button>
+        </header>
+
+        <div class="admin-nav">
+            <div class="nav-tab active" onclick="openTab(event, 'stats')">📊 Statistiques</div>
+            <div class="nav-tab" onclick="openTab(event, 'interventions')">📋 Interventions</div>
+            <div class="nav-tab" onclick="openTab(event, 'equipe')">👥 Équipe & Codes</div>
+            <div class="nav-tab" onclick="openTab(event, 'lignes')">🏭 Lignes</div>
+            <div class="nav-tab" onclick="openTab(event, 'messages')">💬 Messages Opérateurs</div>
+        </div>
+
+        <div id="stats" class="tab-content active">
+            <div class="stat-grid">
+                <div class="card-stat">
+                    <h3>Répartition par Ligne</h3>
+                    <canvas id="chartLignes"></canvas>
+                </div>
+                <div class="card-stat">
+                    <h3>Charge par Technicien (Heures)</h3>
+                    <canvas id="chartTechs"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <div id="interventions" class="tab-content">
+            <div style="display:flex; justify-content: space-between; margin-bottom:15px;">
+                <h3>Gestion des données</h3>
+                <button class="btn-add" style="background:#3b82f6" onclick="exportData()">📥 EXPORT EXCEL/CSV</button>
+            </div>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Date</th><th>Ligne</th><th>Auteur</th><th>Détails</th><th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="admin-table-inter"></tbody>
+            </table>
+        </div>
+
+        <div id="equipe" class="tab-content">
+            <h3>Ajouter un profil</h3>
+            <div style="display:flex; gap:10px; margin-bottom:20px;">
+                <input type="text" id="new-nom" placeholder="Nom Complet">
+                <input type="text" id="new-pin" placeholder="Code PIN (Tech)">
+                <select id="new-role">
+                    <option value="referent">Référent</option>
+                    <option value="technicien">Technicien</option>
+                </select>
+                <button class="btn-add" onclick="addUser()">Ajouter</button>
+            </div>
+            <table id="table-users">
+                <thead><tr><th>Nom</th><th>Rôle</th><th>Code</th><th>Action</th></tr></thead>
+                <tbody id="admin-table-users"></tbody>
+            </table>
+        </div>
+
+        <div id="lignes" class="tab-content">
+            <h3>Configuration des lignes</h3>
+            <div style="display:flex; gap:10px;">
+                <input type="text" id="new-ligne" placeholder="Nom de la ligne">
+                <button class="btn-add" onclick="addLigne()">Ajouter la ligne</button>
+            </div>
+            <ul id="list-lignes" style="margin-top:20px;"></ul>
+        </div>
+        
+        <div id="messages" class="tab-content">
+            <h3>Alertes Opérateurs</h3>
+            <div id="op-messages-list">
+                <p style="color:#666">Aucun nouveau message opérateur.</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Gestion des onglets
+        function openTab(evt, tabName) {
+            let contents = document.getElementsByClassName("tab-content");
+            for (let c of contents) c.classList.remove("active");
+            let tabs = document.getElementsByClassName("nav-tab");
+            for (let t of tabs) t.classList.remove("active");
+            document.getElementById(tabName).classList.add("active");
+            evt.currentTarget.classList.add("active");
+            if(tabName === 'stats') loadCharts();
+        }
+
+        // --- Fonctions API (A relier à app.py) ---
+        
+        async function loadCharts() {
+            // Ici on appellera une route /api/stats pour Chart.js
+            
+        }
+
+        async function exportData() {
+            window.open('/api/export_csv', '_blank');
+        }
+
+        // Fonctions pour supprimer, ajouter, etc...
+        async function deleteIntervention(id) {
+            if(confirm("Supprimer définitivement ?")) {
+                await fetch(`/api/admin/delete_inter/${id}`, {method: 'DELETE'});
+                // Recharger la liste
+            }
+        }
+    </script>
 </body>
 </html>
