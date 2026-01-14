@@ -1,14 +1,31 @@
-<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
-<html>
+<!DOCTYPE html>
+<html lang="fr">
 <head>
-  <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
-  <meta http-equiv="Content-Style-Type" content="text/css">
-  <title></title>
-  <meta name="Generator" content="Cocoa HTML Writer">
-  <meta name="CocoaVersion" content="2575.2">
-  <style type="text/css">
-  </style>
+    <meta charset="UTF-8">
+    <title>Saisie Référent</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body>
+    <div class="admin-container">
+        <h2>Saisie d'Intervention</h2>
+        <div class="form-grid">
+            <select id="ligne">
+                <option value="">Sélectionner la Ligne</option>
+                <option value="Ligne 1">Ligne 1 - Emballage</option>
+                <option value="Ligne 2">Ligne 2 - Conditionnement</option>
+                <option value="Ligne 3">Ligne 3 - Expédition</option>
+            </select>
+            <input type="text" id="machine" placeholder="N° de Machine">
+            <input type="text" id="nom_op" placeholder="Nom de l'opérateur concerné">
+            <textarea id="desc" placeholder="Détails de l'acte technique..."></textarea>
+            <button onclick="envoyerIntervention()" class="btn-primary">Valider l'acte</button>
+        </div>
+
+        <hr>
+        <h3>Mon Historique (30 derniers jours)</h3>
+        <div id="historique-list">
+            </div>
+    </div>
+    <script src="{{ url_for('static', filename='script.js') }}"></script>
 </body>
 </html>
