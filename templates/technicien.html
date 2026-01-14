@@ -3,113 +3,138 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>GMAO - Validation Technique</title>
+    <title>GMAO - Espace Technicien</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
     <style>
-        .table-container { margin-top: 20px; overflow-x: auto; }
-        table { width: 100%; border-collapse: collapse; background: rgba(255,255,255,0.02); border-radius: 12px; overflow: hidden; }
-        th { background: #2d353f; color: #fb923c; padding: 15px; text-align: left; text-transform: uppercase; font-size: 0.8rem; }
-        td { padding: 15px; border-bottom: 1px solid rgba(255,255,255,0.05); color: #e5e7eb; }
+        .tech-grid { display: grid; grid-template-columns: 1fr; gap: 30px; margin-top: 20px; }
+        .section-box { background: rgba(255,255,255,0.03); border: 1px solid #2d353f; border-radius: 15px; padding: 20px; }
         
-        .badge-pending { background: rgba(251, 146, 60, 0.1); color: #fb923c; padding: 5px 10px; border-radius: 6px; font-size: 0.8rem; border: 1px solid rgba(251, 146, 60, 0.2); }
+        /* Formulaire rapide tech */
+        .quick-form { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; }
         
-        .btn-validate { background: #10b981; color: white; border: none; padding: 8px 15px; border-radius: 6px; cursor: pointer; font-weight: bold; transition: 0.3s; }
-        .btn-validate:hover { background: #059669; transform: scale(1.05); }
-        .btn-validate:disabled { background: #374151; cursor: not-allowed; opacity: 0.5; }
+        /* Tableaux */
+        table { width: 100%; border-collapse: collapse; margin-top: 15px; font-size: 0.9rem; }
+        th { background: #1a1f26; color: #fb923c; padding: 12px; text-align: left; border-bottom: 2px solid #2d353f; }
+        td { padding: 12px; border-bottom: 1px solid rgba(255,255,255,0.05); }
 
-        .empty-state { text-align: center; padding: 50px; color: #666; font-style: italic; }
+        /* Statuts */
+        .status-pill { padding: 4px 10px; border-radius: 20px; font-size: 0.75rem; font-weight: bold; text-transform: uppercase; }
+        .statut-attente { background: rgba(251, 146, 60, 0.1); color: #fb923c; border: 1px solid #fb923c; }
+        .statut-saisi { background: rgba(16, 185, 129, 0.1); color: #10b981; border: 1px solid #10b981; }
+        
+        .btn-action { background: #38bdf8; color: #000; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-weight: bold; }
+        .btn-save { background: #fb923c; width: 100%; margin-top: 10px; padding: 12px; border-radius: 8px; border: none; font-weight: bold; cursor: pointer; }
     </style>
 </head>
 <body>
     <div class="main-container">
-        <header style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px;">
-            <div>
-                <h1 style="color: #fb923c;">Tableau de Bord Tech</h1>
-                <p id="tech-name" style="color: #666;">Connecté : -</p>
-            </div>
-            <button onclick="window.location.href='/'" class="btn-secondary" style="padding: 10px 20px;">DÉCONNEXION</button>
+        <header style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+            <h1 style="color: #fb923c;">Tableau de Bord Technique</h1>
+            <button onclick="window.location.href='/'" class="btn-secondary">QUITTER</button>
         </header>
 
-        <div class="table-container">
-            <table id="interventions-table">
-                <thead>
-                    <tr>
-                        <th>Date</th>
-                        <th>Ligne</th>
-                        <th>Référent</th>
-                        <th>Description</th>
-                        <th>Statut</th>
-                        <th>Action</th>
-                    </tr>
-                </thead>
-                <tbody id="table-body">
-                    </tbody>
-            </table>
-            <div id="no-data" class="empty-state" style="display:none;">Aucune intervention en attente.</div>
+        <div class="tech-grid">
+            
+            <div class="section-box">
+                <h3 style="color: #fb923c;">🛠️ DÉCLARER UNE INTERVENTION</h3>
+                <div class="quick-form">
+                    <select id="ligne" class="user-case" style="width:100%; height:50px; background:#1a1f26; color:white; border:1px solid #333;">
+                        <option value="Ligne A">Ligne A</option>
+                        <option value="Ligne B">Ligne B</option>
+                        <option value="Ligne C">Ligne C</option>
+                        <option value="Ligne D">Ligne D</option>
+                    </select>
+                    <input type="text" id="desc" placeholder="Nature du travail fait..." style="background:#1a1f26; color:white; border:1px solid #333; padding:10px; border-radius:8px;">
+                </div>
+                <button class="btn-save" onclick="creerInterventionTech()">ENREGISTRER MON INTERVENTION</button>
+            </div>
+
+            <div class="section-box">
+                <h3 style="color: #38bdf8;">📋 SUIVI DES INTERVENTIONS (Référents + Techs)</h3>
+                <div style="overflow-x: auto;">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Ligne</th>
+                                <th>Auteur</th>
+                                <th>Description</th>
+                                <th>Statut GMAO</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="table-historique">
+                            </tbody>
+                    </table>
+                </div>
+            </div>
+
         </div>
     </div>
 
     <script>
         const techNom = localStorage.getItem('user_nom');
         const techId = localStorage.getItem('user_id');
-        document.getElementById('tech-name').innerText = "Technicien : " + techNom;
 
-        // Charger les interventions au démarrage
-        async function loadInterventions() {
-            try {
-                // On récupère TOUTES les interventions (le technicien voit tout)
-                const response = await fetch('/api/historique_global'); 
-                const data = await response.json();
+        async function loadAll() {
+            const response = await fetch('/api/historique_complet');
+            const data = await response.json();
+            const tbody = document.getElementById('table-historique');
+            tbody.innerHTML = "";
+
+            data.forEach(item => {
+                const date = new Date(item.date_saisie).toLocaleDateString('fr-FR', {day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit'});
+                const estSaisi = item.statut === 'saisi_gmao';
                 
-                const tbody = document.getElementById('table-body');
-                tbody.innerHTML = "";
-
-                if (data.length === 0) {
-                    document.getElementById('no-data').style.display = "block";
-                    return;
-                }
-
-                data.forEach(item => {
-                    const date = new Date(item.date_saisie).toLocaleString('fr-FR', {day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit'});
-                    const row = `
-                        <tr>
-                            <td>${date}</td>
-                            <td><b style="color:#38bdf8">${item.ligne_production}</b></td>
-                            <td>${item.nom_complet || 'Référent'}</td>
-                            <td>${item.description}</td>
-                            <td><span class="badge-pending">En attente</span></td>
-                            <td>
-                                <button class="btn-validate" onclick="validerIntervention(${item.id})">VALIDER</button>
-                            </td>
-                        </tr>
-                    `;
-                    tbody.innerHTML += row;
-                });
-            } catch (error) {
-                console.error("Erreur de chargement:", error);
-            }
+                const row = `
+                    <tr>
+                        <td>${date}</td>
+                        <td><b>${item.ligne_production}</b></td>
+                        <td>${item.nom_complet || 'Tech'}</td>
+                        <td>${item.description}</td>
+                        <td>
+                            <span class="status-pill ${estSaisi ? 'statut-saisi' : 'statut-attente'}">
+                                ${estSaisi ? '✅ DANS GMAO' : '⏳ À SAISIR'}
+                            </span>
+                        </td>
+                        <td>
+                            ${!estSaisi ? `<button class="btn-action" onclick="cloturerGmao(${item.id})">VALIDER SAISIE</button>` : 'OK'}
+                        </td>
+                    </tr>
+                `;
+                tbody.innerHTML += row;
+            });
         }
 
-        async function validerIntervention(id) {
-            if (!confirm("Confirmer la clôture de cette intervention ?")) return;
-
-            const response = await fetch('/api/valider_intervention', {
+        async function creerInterventionTech() {
+            const desc = document.getElementById('desc').value;
+            if(!desc) return alert("Précisez le travail fait");
+            
+            await fetch('/api/save_intervention', {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({ 
-                    id_intervention: id,
-                    id_tech: techNom // On enregistre qui a validé
+                body: JSON.stringify({
+                    ligne: document.getElementById('ligne').value,
+                    machine: "TECH",
+                    nom_op: techNom,
+                    description: desc,
+                    id_referent: techId
                 })
             });
-
-            if (response.ok) {
-                loadInterventions(); // Recharger la liste
-            } else {
-                alert("Erreur lors de la validation");
-            }
+            document.getElementById('desc').value = "";
+            loadAll();
         }
 
-        loadInterventions();
+        async function cloturerGmao(id) {
+            await fetch('/api/cloturer_gmao', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ id_intervention: id, id_tech: techNom })
+            });
+            loadAll();
+        }
+
+        loadAll();
     </script>
 </body>
 </html>
