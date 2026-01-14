@@ -1,6 +1,31 @@
-{\rtf1\ansi\ansicpg1252\cocoartf2820
-\cocoatextscaling0\cocoaplatform0{\fonttbl}
-{\colortbl;\red255\green255\blue255;}
-{\*\expandedcolortbl;;}
-\paperw11900\paperh16840\margl1440\margr1440\vieww11520\viewh8400\viewkind0
+// Fonction pour envoyer une remarque opérateur
+async function envoyerRemarque() {
+    const com = document.getElementById('commentaire').value;
+    const response = await fetch('/api/remarque_op', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({commentaire: com})
+    });
+    if(response.ok) {
+        document.getElementById('msg-success').style.display = 'block';
+        document.getElementById('commentaire').value = '';
+    }
+}
+
+// Fonction pour envoyer une intervention référent
+async function envoyerIntervention() {
+    const data = {
+        ligne: document.getElementById('ligne').value,
+        machine: document.getElementById('machine').value,
+        nom_op: document.getElementById('nom_op').value,
+        description: document.getElementById('desc').value,
+        id_referent: localStorage.getItem('user_id') // Stocké lors du login
+    };
+
+    const response = await fetch('/api/save_intervention', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify(data)
+    });
+    if(response.ok) alert("Intervention enregistrée !");
 }
