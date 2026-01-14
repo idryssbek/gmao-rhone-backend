@@ -2,7 +2,6 @@ from flask import Flask, request, jsonify, render_template, Response
 from flask_cors import CORS
 import psycopg2, os, csv, io
 from psycopg2.extras import RealDictCursor
-from datetime import datetime
 
 app = Flask(__name__)
 CORS(app)
@@ -11,7 +10,7 @@ DB_URL = os.environ.get("DATABASE_URL")
 def get_db_connection():
     return psycopg2.connect(DB_URL, cursor_factory=RealDictCursor)
 
-# --- NAVIGATION ---
+# --- ROUTES PAGES ---
 @app.route('/')
 def home(): return render_template('index.html')
 
@@ -27,7 +26,7 @@ def page_technicien(): return render_template('technicien.html')
 @app.route('/admin')
 def page_admin(): return render_template('admin.html')
 
-# --- AUTHENTIFICATION ---
+# --- API AUTH ---
 @app.route('/login_gmao', methods=['POST'])
 def login_gmao():
     data = request.json
@@ -38,7 +37,7 @@ def login_gmao():
     if user: return jsonify({"status": "success", "id": user['id'], "role": user['role'], "nom": user['nom_complet']})
     return jsonify({"status": "error"}), 401
 
-# --- GESTION DES LIGNES (DYNAMIQUE) ---
+# --- API LIGNES ---
 @app.route('/api/lignes', methods=['GET', 'POST'])
 def manage_lignes():
     conn = get_db_connection(); cur = conn.cursor()
@@ -56,17 +55,22 @@ def delete_ligne(id):
     conn.commit(); cur.close(); conn.close()
     return jsonify({"status": "deleted"})
 
-# --- GESTION DES INTERVENTIONS ---
+# --- API INTERVENTIONS ---
 @app.route('/api/save_intervention', methods=['POST'])
 def save_intervention():
     data = request.json
     conn = get_db_connection(); cur = conn.cursor()
-    cur.execute("""
-        INSERT INTO interventions (ligne_production, machine_num, nom_operateur_intervenant, description, id_referent, statut)
-        VALUES (%s, %s, %s, %s, %s, 'en_attente')
-    """, (data['ligne'], data['machine'], data['nom_op'], data['description'], data['id_referent']))
-    conn.commit(); cur.close(); conn.close()
-    return jsonify({"status": "success"})
+    try:
+        cur.execute("""
+            INSERT INTO interventions (ligne_production, machine_num, nom_operateur_intervenant, description, id_referent, statut)
+            VALUES (%s, %s, %s, %s, %s, 'en_attente')
+        """, (data['ligne'], data['machine'], data['nom_op'], data['description'], data['id_referent']))
+        conn.commit()
+        return jsonify({"status": "success"})
+    except Exception as e:
+        return jsonify({"status": "error", "message": str(e)}), 500
+    finally:
+        cur.close(); conn.close()
 
 @app.route('/api/historique_complet')
 def get_historique_complet():
@@ -79,14 +83,23 @@ def get_historique_complet():
     rows = cur.fetchall(); cur.close(); conn.close()
     return jsonify(rows)
 
+@app.route('/api/cloturer_gmao', methods=['POST'])
+def cloturer_gmao():
+    data = request.json
+    conn = get_db_connection(); cur = conn.cursor()
+    cur.execute("UPDATE interventions SET statut = 'saisi_gmao', valide_par_tech = %s WHERE id = %s", 
+               (str(data['id_tech']), int(data['id_intervention'])))
+    conn.commit(); cur.close(); conn.close()
+    return jsonify({"status": "success"})
+
 @app.route('/api/admin/delete_inter/<int:id>', methods=['DELETE'])
-def delete_intervention(id):
+def delete_inter(id):
     conn = get_db_connection(); cur = conn.cursor()
     cur.execute("DELETE FROM interventions WHERE id = %s", (id,))
     conn.commit(); cur.close(); conn.close()
     return jsonify({"status": "success"})
 
-# --- GESTION EQUIPE ---
+# --- API EQUIPE ---
 @app.route('/api/admin/users', methods=['GET', 'POST'])
 def manage_users():
     conn = get_db_connection(); cur = conn.cursor()
@@ -106,46 +119,32 @@ def delete_user(id):
     conn.commit(); cur.close(); conn.close()
     return jsonify({"status": "success"})
 
-# --- EXPORT CSV ---
+# --- SETUP & EXPORT ---
 @app.route('/api/export_csv')
 def export_csv():
     conn = get_db_connection(); cur = conn.cursor()
     cur.execute("SELECT * FROM interventions ORDER BY date_saisie DESC")
     rows = cur.fetchall()
-    
     output = io.StringIO()
     writer = csv.writer(output)
-    writer.writerow(['ID', 'Date', 'Ligne', 'Machine', 'Auteur', 'Description', 'Statut', 'Validé par'])
-    for r in rows:
-        writer.writerow([r['id'], r['date_saisie'], r['ligne_production'], r['machine_num'], r['nom_operateur_intervenant'], r['description'], r['statut'], r['valide_par_tech']])
-    
-    cur.close(); conn.close()
-    return Response(output.getvalue(), mimetype="text/csv", headers={"Content-disposition": "attachment; filename=gmao_export.csv"})
+    writer.writerow(['Date', 'Ligne', 'Machine', 'Auteur', 'Description', 'Statut'])
+    for r in rows: writer.writerow([r['date_saisie'], r['ligne_production'], r['machine_num'], r['nom_operateur_intervenant'], r['description'], r['statut']])
+    return Response(output.getvalue(), mimetype="text/csv", headers={"Content-disposition":"attachment; filename=gmao.csv"})
 
-# --- SETUP DATABASE ---
 @app.route('/setup_db')
 def setup_db():
     conn = get_db_connection(); cur = conn.cursor()
     cur.execute("""
-        CREATE TABLE IF NOT EXISTS gmao_users (
-            id SERIAL PRIMARY KEY, username TEXT UNIQUE, password_hash TEXT, role TEXT, nom_complet TEXT
-        );
-        CREATE TABLE IF NOT EXISTS lignes_production (
-            id SERIAL PRIMARY KEY, nom_ligne TEXT UNIQUE NOT NULL
-        );
+        CREATE TABLE IF NOT EXISTS gmao_users (id SERIAL PRIMARY KEY, username TEXT UNIQUE, password_hash TEXT, role TEXT, nom_complet TEXT);
+        CREATE TABLE IF NOT EXISTS lignes_production (id SERIAL PRIMARY KEY, nom_ligne TEXT UNIQUE NOT NULL);
         CREATE TABLE IF NOT EXISTS interventions (
             id SERIAL PRIMARY KEY, date_saisie TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             ligne_production TEXT, machine_num TEXT, nom_operateur_intervenant TEXT,
             description TEXT, id_referent INTEGER, statut TEXT DEFAULT 'en_attente', valide_par_tech TEXT
         );
-        -- Insertion des lignes par défaut
-        INSERT INTO lignes_production (nom_ligne) VALUES ('Ligne A'),('Ligne B'),('Ligne C') ON CONFLICT DO NOTHING;
-        
-        -- Insertion users par défaut (si vide)
-        INSERT INTO gmao_users (username, password_hash, role, nom_complet) VALUES 
-        ('Admin','1234','admin','Administrateur') ON CONFLICT DO NOTHING;
+        INSERT INTO gmao_users (username, password_hash, role, nom_complet) VALUES ('Admin','1234','admin','Admin') ON CONFLICT DO NOTHING;
     """)
-    conn.commit(); cur.close(); conn.close(); return "Base de données optimisée !"
+    conn.commit(); cur.close(); conn.close(); return "OK"
 
 if __name__ == "__main__":
     app.run(host='0.0.0.0', port=int(os.environ.get("PORT", 10000)))
