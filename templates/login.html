@@ -2,126 +2,36 @@
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>GMAO - Identification Référents</title>
+    <title>GMAO - Identification Rapide</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
-    <style>
-        /* Styles spécifiques à la grille des profils */
-        .grid-users {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
-            gap: 1.5rem;
-            margin-top: 2rem;
-        }
-        .pin-container {
-            display: none;
-            animation: fadeIn 0.4s ease;
-        }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-    </style>
 </head>
 <body>
     <div class="main-container">
-        <header id="header-selection">
-            <h1>Espace Référent</h1>
-            <p style="color: var(--text-dim);">Qui êtes-vous ?</p>
-        </header>
+        <h1>Qui êtes-vous ?</h1>
+        <p style="color: var(--text-dim); margin-bottom: 2rem;">Accès direct à votre espace de saisie</p>
 
-        <div class="grid-users" id="users-grid">
-            <div class="card-user" onclick="preparerLogin('Référent 1', 1)">
-                <div class="avatar">R1</div><span>Référent 1</span>
+        <div class="grid-selection">
+            <div class="card-user" onclick="connexionDirecte('Jean', 1)">
+                <div class="avatar">J</div><span>Jean</span>
             </div>
-            <div class="card-user" onclick="preparerLogin('Référent 2', 2)">
-                <div class="avatar">R2</div><span>Référent 2</span>
+            <div class="card-user" onclick="connexionDirecte('Marc', 2)">
+                <div class="avatar">M</div><span>Marc</span>
             </div>
-            <div class="card-user" onclick="preparerLogin('Référent 3', 3)">
-                <div class="avatar">R3</div><span>Référent 3</span>
+            <div class="card-user" onclick="connexionDirecte('Sophie', 3)">
+                <div class="avatar">S</div><span>Sophie</span>
             </div>
-            <div class="card-user" onclick="preparerLogin('Référent 4', 4)">
-                <div class="avatar">R4</div><span>Référent 4</span>
             </div>
-            <div class="card-user" onclick="preparerLogin('Référent 5', 5)">
-                <div class="avatar">R5</div><span>Référent 5</span>
-            </div>
-            <div class="card-user" onclick="preparerLogin('Référent 6', 6)">
-                <div class="avatar">R6</div><span>Référent 6</span>
-            </div>
-            <div class="card-user" onclick="preparerLogin('Référent 7', 7)">
-                <div class="avatar">R7</div><span>Référent 7</span>
-            </div>
-            <div class="card-user" onclick="preparerLogin('Référent 8', 8)">
-                <div class="avatar">R8</div><span>Référent 8</span>
-            </div>
-            <div class="card-user" onclick="preparerLogin('Référent 9', 9)">
-                <div class="avatar">R9</div><span>Référent 9</span>
-            </div>
-            <div class="card-user" onclick="preparerLogin('Référent 10', 10)">
-                <div class="avatar">R10</div><span>Référent 10</span>
-            </div>
-            <div class="card-user" onclick="preparerLogin('Référent 11', 11)">
-                <div class="avatar">R11</div><span>Référent 11</span>
-            </div>
-            <div class="card-user" onclick="preparerLogin('Référent 12', 12)">
-                <div class="avatar">R12</div><span>Référent 12</span>
-            </div>
-        </div>
-
-        <div class="pin-container" id="pin-section">
-            <h2 id="welcome-name" style="color: var(--accent-blue);">Bonjour</h2>
-            <p>Entrez votre code secret</p>
-            <input type="password" id="password" placeholder="••••" style="font-size: 2rem; text-align: center; width: 150px; letter-spacing: 5px;">
-            <br><br>
-            <button class="btn-primary" onclick="tenterConnexion()" style="width: 200px;">Se connecter</button>
-            <br>
-            <button onclick="annuler()" style="background:none; border:none; color:var(--text-dim); cursor:pointer; margin-top:15px;">← Retour à la liste</button>
-        </div>
     </div>
 
     <script>
-        let selectedUserId = null;
-        let selectedUserName = "";
-
-        function preparerLogin(nom, id) {
-            selectedUserId = id;
-            selectedUserName = nom;
-            document.getElementById('users-grid').style.display = 'none';
-            document.getElementById('header-selection').style.display = 'none';
-            document.getElementById('pin-section').style.display = 'block';
-            document.getElementById('welcome-name').innerText = "Bonjour " + nom;
-            document.getElementById('password').focus();
-        }
-
-        function annuler() {
-            document.getElementById('pin-section').style.display = 'none';
-            document.getElementById('users-grid').style.display = 'grid';
-            document.getElementById('header-selection').style.display = 'block';
-        }
-
-        async function tenterConnexion() {
-            const pass = document.getElementById('password').value;
-            // On utilise ton API existante
-            const response = await fetch('/login_gmao', {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({
-                    username: selectedUserName, // Le nom choisi
-                    password: pass // Le code tapé
-                })
-            });
-
-            const data = await response.json();
-
-            if (data.status === "success") {
-                // Stockage des infos pour la session
-                localStorage.setItem('user_id', data.id);
-                localStorage.setItem('user_nom', data.nom);
-                localStorage.setItem('user_role', data.role);
-                
-                // Direction l'espace référent
-                window.location.href = '/page_referent';
-            } else {
-                alert("Code incorrect pour " + selectedUserName);
-            }
+        function connexionDirecte(nom, id) {
+            // On stocke l'identité localement sans demander de mot de passe
+            localStorage.setItem('user_id', id);
+            localStorage.setItem('user_nom', nom);
+            localStorage.setItem('user_role', 'referent');
+            
+            // Redirection immédiate
+            window.location.href = '/page_referent';
         }
     </script>
 </body>
