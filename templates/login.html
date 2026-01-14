@@ -6,48 +6,107 @@
     <title>GMAO - Identification</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
     <style>
-        .grid-users { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 15px; margin-top: 15px; }
-        .keypad { display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; max-width: 250px; margin: 20px auto; }
-        .key { width: 65px; height: 65px; border-radius: 50%; border: 1px solid rgba(255,255,255,0.1); background: rgba(255,255,255,0.05); color: white; font-size: 1.4rem; display: flex; align-items: center; justify-content: center; cursor: pointer; }
-        .key:active { background: var(--accent-orange); } /* Orange car seuls les techs utilisent le clavier désormais */
-        .dots { display: flex; justify-content: center; gap: 12px; margin-bottom: 20px; }
-        .dot { width: 12px; height: 12px; border: 2px solid var(--accent-orange); border-radius: 50%; }
-        .dot.active { background: var(--accent-orange); box-shadow: 0 0 10px var(--accent-orange); }
+        /* Grille de sélection */
+        .grid-users { 
+            display: grid; 
+            grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); 
+            gap: 15px; 
+            margin-top: 20px; 
+        }
+
+        /* Style des "Cases" de noms */
+        .user-case {
+            background: #1a1f26; /* Fond sombre solide */
+            border: 2px solid #2d353f; /* Bordure marquée */
+            padding: 25px 10px;
+            border-radius: 12px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s ease-in-out;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .user-case span {
+            color: #ffffff;
+            font-size: 1.1rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        /* Interaction au clic (Effet bouton pressé) */
+        .user-case:active {
+            transform: scale(0.95);
+            background: #2d353f;
+        }
+
+        /* Couleur spécifique pour les Référents (Bleu) */
+        .ref-case:hover {
+            border-color: #38bdf8;
+            background: rgba(56, 189, 248, 0.1);
+            box-shadow: 0 0 15px rgba(56, 189, 248, 0.2);
+        }
+
+        /* Couleur spécifique pour les Techniciens (Orange) */
+        .tech-case {
+            border-color: rgba(251, 146, 60, 0.4);
+        }
+        .tech-case:hover {
+            border-color: #fb923c;
+            background: rgba(251, 146, 60, 0.1);
+            box-shadow: 0 0 15px rgba(251, 146, 60, 0.2);
+        }
+
+        /* Cacher les sections pour le filtrage */
         #section-tech, #section-ref { display: none; }
+
+        /* Style Keypad iPhone pour les techs */
+        .keypad { display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; max-width: 250px; margin: 30px auto; }
+        .key { width: 70px; height: 70px; border-radius: 50%; border: 1px solid #333; background: #1a1f26; color: white; font-size: 1.5rem; display: flex; align-items: center; justify-content: center; cursor: pointer; }
+        .key:active { background: #fb923c; color: black; }
+        .dots { display: flex; justify-content: center; gap: 15px; margin-bottom: 30px; }
+        .dot { width: 14px; height: 14px; border: 2px solid #fb923c; border-radius: 50%; }
+        .dot.active { background: #fb923c; }
     </style>
 </head>
 <body>
     <div class="main-container">
+        
         <div id="step-names">
             <h1 id="page-title">Identification</h1>
             
             <div id="section-tech">
-                <h3 style="color: var(--accent-orange); text-align: left;">🛠️ Staff Technique (Accès Sécurisé)</h3>
+                <h3 style="color: #fb923c; margin-bottom: 20px;">🛠️ ÉQUIPE TECHNIQUE</h3>
                 <div class="grid-users">
-                    <div class="card-user tech-card" onclick="showKeypad('Sébastien', 'technicien')"><div class="avatar tech-avatar">S</div><span>Sébastien</span></div>
-                    <div class="card-user tech-card" onclick="showKeypad('Henri', 'technicien')"><div class="avatar tech-avatar">H</div><span>Henri</span></div>
-                    <div class="card-user tech-card" onclick="showKeypad('Idryss', 'technicien')"><div class="avatar tech-avatar">I</div><span>Idryss</span></div>
+                    <div class="user-case tech-case" onclick="showKeypad('Sébastien')"><span>Sébastien</span></div>
+                    <div class="user-case tech-case" onclick="showKeypad('Henri')"><span>Henri</span></div>
+                    <div class="user-case tech-case" onclick="showKeypad('Idryss')"><span>Idryss</span></div>
                 </div>
             </div>
 
             <div id="section-ref">
-                <h3 style="color: var(--accent-blue); text-align: left; margin-top: 2rem;">👥 Référents Production (Accès Direct)</h3>
+                <h3 style="color: #38bdf8; margin-bottom: 20px;">👥 RÉFÉRENTS PRODUCTION</h3>
                 <div class="grid-users">
-                    <div class="card-user" onclick="connexionDirecte('Marine.B', 4)"><div class="avatar">MB</div><span>Marine.B</span></div>
-                    <div class="card-user" onclick="connexionDirecte('Clarisse', 5)"><div class="avatar">C</div><span>Clarisse</span></div>
-                    <div class="card-user" onclick="connexionDirecte('Marie-Laure', 6)"><div class="avatar">ML</div><span>M-Laure</span></div>
-                    <div class="card-user" onclick="connexionDirecte('Karen', 7)"><div class="avatar">K</div><span>Karen</span></div>
-                    <div class="card-user" onclick="connexionDirecte('Marine.C', 8)"><div class="avatar">MC</div><span>Marine.C</span></div>
-                    <div class="card-user" onclick="connexionDirecte('Mélanie', 9)"><div class="avatar">M</div><span>Mélanie</span></div>
-                    <div class="card-user" onclick="connexionDirecte('Anne-Marie', 10)"><div class="avatar">AM</div><span>A-Marie</span></div>
-                    <div class="card-user" onclick="connexionDirecte('Nicolas', 11)"><div class="avatar">N</div><span>Nicolas</span></div>
-                    <div class="card-user" onclick="connexionDirecte('Nassim', 12)"><div class="avatar">N</div><span>Nassim</span></div>
+                    <div class="user-case ref-case" onclick="connexionDirecte('Marine.B', 4)"><span>Marine.B</span></div>
+                    <div class="user-case ref-case" onclick="connexionDirecte('Clarisse', 5)"><span>Clarisse</span></div>
+                    <div class="user-case ref-case" onclick="connexionDirecte('Marie-Laure', 6)"><span>Marie-Laure</span></div>
+                    <div class="user-case ref-case" onclick="connexionDirecte('Karen', 7)"><span>Karen</span></div>
+                    <div class="user-case ref-case" onclick="connexionDirecte('Marine.C', 8)"><span>Marine.C</span></div>
+                    <div class="user-case ref-case" onclick="connexionDirecte('Mélanie', 9)"><span>Mélanie</span></div>
+                    <div class="user-case ref-case" onclick="connexionDirecte('Anne-Marie', 10)"><span>Anne-Marie</span></div>
+                    <div class="user-case ref-case" onclick="connexionDirecte('Nicolas', 11)"><span>Nicolas</span></div>
+                    <div class="user-case ref-case" onclick="connexionDirecte('Nassim', 12)"><span>Nassim</span></div>
                 </div>
             </div>
+            
+            <button onclick="window.location.href='/'" style="background:none; border:none; color:#666; cursor:pointer; margin-top:50px; font-size: 1rem;">← RETOUR</button>
         </div>
 
         <div id="step-pin" style="display:none;">
-            <h1 id="welcome-name">Code PIN</h1>
+            <h1 id="welcome-name" style="color: #fb923c;">Code PIN</h1>
             <div class="dots"><div class="dot"></div><div class="dot"></div><div class="dot"></div><div class="dot"></div></div>
             <div class="keypad">
                 <div class="key" onclick="pressKey('1')">1</div><div class="key" onclick="pressKey('2')">2</div><div class="key" onclick="pressKey('3')">3</div>
@@ -56,6 +115,7 @@
                 <div class="key" onclick="cancelPin()">✕</div><div class="key" onclick="pressKey('0')">0</div><div class="key" onclick="clearPin()">⌫</div>
             </div>
         </div>
+
     </div>
 
     <script>
@@ -67,67 +127,11 @@
             const role = urlParams.get('role');
             if (role === 'technicien') {
                 document.getElementById('section-tech').style.display = 'block';
-                document.getElementById('page-title').innerText = "Espace Staff";
+                document.getElementById('page-title').innerText = "ESPACE STAFF";
             } else {
                 document.getElementById('section-ref').style.display = 'block';
-                document.getElementById('page-title').innerText = "Espace Référent";
+                document.getElementById('page-title').innerText = "ESPACE RÉFÉRENT";
             }
         }
 
-        // --- LOGIQUE RÉFÉRENT (Direct) ---
         function connexionDirecte(nom, id) {
-            localStorage.setItem('user_id', id);
-            localStorage.setItem('user_nom', nom);
-            localStorage.setItem('user_role', 'referent');
-            window.location.href = '/page_referent';
-        }
-
-        // --- LOGIQUE TECH (Avec PIN) ---
-        function showKeypad(name) {
-            selectedName = name;
-            document.getElementById('welcome-name').innerText = "Bonjour " + name;
-            document.getElementById('step-names').style.display = 'none';
-            document.getElementById('step-pin').style.display = 'block';
-        }
-
-        function cancelPin() {
-            currentPin = ""; updateDots();
-            document.getElementById('step-pin').style.display = 'none';
-            document.getElementById('step-names').style.display = 'block';
-        }
-
-        function pressKey(num) {
-            if (currentPin.length < 4) {
-                currentPin += num;
-                updateDots();
-                if (currentPin.length === 4) verifyPin();
-            }
-        }
-
-        function clearPin() { currentPin = currentPin.slice(0, -1); updateDots(); }
-
-        function updateDots() {
-            const dots = document.querySelectorAll('.dot');
-            dots.forEach((dot, i) => i < currentPin.length ? dot.classList.add('active') : dot.classList.remove('active'));
-        }
-
-        async function verifyPin() {
-            const response = await fetch('/login_gmao', {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({ username: selectedName, password: currentPin })
-            });
-            const data = await response.json();
-            if (data.status === "success") {
-                localStorage.setItem('user_id', data.id);
-                localStorage.setItem('user_nom', data.nom);
-                localStorage.setItem('user_role', 'technicien');
-                window.location.href = '/page_technicien';
-            } else {
-                alert("Code PIN incorrect");
-                currentPin = ""; updateDots();
-            }
-        }
-    </script>
-</body>
-</html>
