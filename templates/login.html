@@ -1,8 +1,19 @@
-{\rtf1\ansi\ansicpg1252\cocoartf2820
-\cocoatextscaling0\cocoaplatform0{\fonttbl\f0\fswiss\fcharset0 Helvetica;}
-{\colortbl;\red255\green255\blue255;}
-{\*\expandedcolortbl;;}
-\paperw11900\paperh16840\margl1440\margr1440\vieww11520\viewh8400\viewkind0
-\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
-
-\f0\fs24 \cf0 Dd}
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Connexion GMAO</title>
+</head>
+<body style="font-family:sans-serif; text-align:center; padding-top:100px; background:#f4f4f4;">
+    <div style="background:white; display:inline-block; padding:30px; border-radius:10px; box-shadow:0 0 10px rgba(0,0,0,0.1);">
+        <h2>Maintenance - Connexion</h2>
+        <form method="POST">
+            <input type="text" name="username" placeholder="Identifiant" required style="display:block; margin:10px auto; padding:10px; width:200px;"><br>
+            <input type="password" name="password" placeholder="Mot de passe" required style="display:block; margin:10px auto; padding:10px; width:200px;"><br>
+            <button type="submit" style="padding:10px 20px; background:blue; color:white; border:none; border-radius:5px; cursor:pointer;">Se connecter</button>
+        </form>
+        {% with messages = get_flashed_messages() %}
+          {% if messages %}<p style="color:red;">{{ messages[0] }}</p>{% endif %}
+        {% endwith %}
+    </div>
+</body>
+</html>
