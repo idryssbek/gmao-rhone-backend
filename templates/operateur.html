@@ -2,21 +2,16 @@
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
-    <title>Remontée Opérateur</title>
+    <title>Remarque Opérateur</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body>
     <div class="form-container">
-        <h2>📢 Remonter une information</h2>
-        <p>Une remarque sur la qualité ? Un bruit anormal ? Notez-le ici.</p>
-        
-        <textarea id="commentaire" placeholder="Ex: La machine 4 fait un bruit métallique depuis 10min..."></textarea>
-        
-        <button onclick="envoyerRemarque()" class="btn-envoyer">Envoyer l'alerte</button>
-        <br>
-        <a href="/">Retour à l'accueil</a>
+        <h2>📢 Remontée d'information</h2>
+        <textarea id="commentaire" placeholder="Décrivez le problème (ex: Vibration anormale ligne 2)..." rows="5"></textarea>
+        <button onclick="envoyerRemarque()" class="btn-primary">Envoyer l'information</button>
+        <p id="msg-success" style="display:none; color: green;">✅ Envoyé avec succès !</p>
     </div>
-
     <script src="{{ url_for('static', filename='script.js') }}"></script>
 </body>
 </html>
