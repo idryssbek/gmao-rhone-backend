@@ -122,7 +122,36 @@ def valider_intervention():
         return jsonify({"status": "success"})
     except Exception as e:
         return jsonify({"status": "error", "message": str(e)}), 500
-
+@app.route('/setup_db')
+def setup_db():
+    try:
+        conn = get_db_connection()
+        cur = conn.cursor()
+        
+        # Le script SQL avec tes noms
+        sql = """
+        INSERT INTO gmao_users (username, password_hash, role, nom_complet) VALUES 
+        ('Sébastien', '0000', 'technicien', 'Sébastien'),
+        ('Henri', '0000', 'technicien', 'Henri'),
+        ('Idryss', '0000', 'technicien', 'Idryss'),
+        ('Marine.B', '0000', 'referent', 'Marine.B'),
+        ('Clarisse', '0000', 'referent', 'Clarisse'),
+        ('Marie-Laure', '0000', 'referent', 'Marie-Laure'),
+        ('Karen', '0000', 'referent', 'Karen'),
+        ('Marine.C', '0000', 'referent', 'Marine.C'),
+        ('Mélanie', '0000', 'referent', 'Mélanie'),
+        ('Anne-Marie', '0000', 'referent', 'Anne-Marie'),
+        ('Nicolas', '0000', 'referent', 'Nicolas'),
+        ('Nassim', '0000', 'referent', 'Nassim')
+        ON CONFLICT (username) DO NOTHING;
+        """
+        cur.execute(sql)
+        conn.commit()
+        cur.close()
+        conn.close()
+        return "Base de données mise à jour avec les 12 profils !"
+    except Exception as e:
+        return str(e)
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 10000))
     app.run(host='0.0.0.0', port=port)
