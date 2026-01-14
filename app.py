@@ -23,13 +23,18 @@ def home():
 def page_operateur():
     return render_template('operateur.html')
 
-@app.route('/page_login')
+# Note : On utilise /login car c'est ce que tes boutons HTML appellent
+@app.route('/login')
 def page_login():
     return render_template('login.html')
 
 @app.route('/page_referent')
 def page_referent():
     return render_template('referent.html')
+
+@app.route('/page_technicien')
+def page_technicien():
+    return render_template('technicien.html')
 
 # --- ROUTES API (DATA) ---
 
@@ -53,31 +58,16 @@ def login_gmao():
     except Exception as e:
         return jsonify({"status": "error", "message": str(e)}), 500
 
-# 1. Remontée simple Opérateur
-@app.route('/api/remarque_op', methods=['POST'])
-def save_remarque():
-    data = request.json
-    try:
-        conn = get_db_connection()
-        cur = conn.cursor()
-        cur.execute("INSERT INTO remarques_operateurs (commentaire) VALUES (%s)", (data['commentaire'],))
-        conn.commit()
-        cur.close()
-        conn.close()
-        return jsonify({"status": "success"})
-    except Exception as e:
-        return jsonify({"status": "error", "message": str(e)}), 500
-
-# 2. Enregistrement intervention Référent
 @app.route('/api/save_intervention', methods=['POST'])
 def save_intervention():
     data = request.json
     try:
         conn = get_db_connection()
         cur = conn.cursor()
+        # On ajoute le statut 'en_attente' par défaut
         cur.execute("""
-            INSERT INTO interventions (ligne_production, machine_num, nom_operateur_intervenant, description, id_referent)
-            VALUES (%s, %s, %s, %s, %s)
+            INSERT INTO interventions (ligne_production, machine_num, nom_operateur_intervenant, description, id_referent, statut)
+            VALUES (%s, %s, %s, %s, %s, 'en_attente')
         """, (data['ligne'], data['machine'], data['nom_op'], data['description'], data['id_referent']))
         conn.commit()
         cur.close()
@@ -86,7 +76,6 @@ def save_intervention():
     except Exception as e:
         return jsonify({"status": "error", "message": str(e)}), 500
 
-# 3. Historique 30 jours pour le Référent
 @app.route('/api/historique/<int:referent_id>', methods=['GET'])
 def get_historique(referent_id):
     try:
@@ -104,31 +93,35 @@ def get_historique(referent_id):
     except Exception as e:
         return jsonify({"status": "error", "message": str(e)}), 500
 
-# 4. Validation Technicien (Mise à jour immédiate)
-@app.route('/api/valider_intervention', methods=['POST'])
-def valider_intervention():
-    data = request.json
-    try:
-        conn = get_db_connection()
-        cur = conn.cursor()
-        cur.execute("""
-            UPDATE interventions 
-            SET statut = 'valide', valide_par_tech = %s 
-            WHERE id = %s
-        """, (data['id_tech'], data['id_intervention']))
-        conn.commit()
-        cur.close()
-        conn.close()
-        return jsonify({"status": "success"})
-    except Exception as e:
-        return jsonify({"status": "error", "message": str(e)}), 500
 @app.route('/setup_db')
 def setup_db():
     try:
         conn = get_db_connection()
         cur = conn.cursor()
         
-        # Le script SQL avec tes noms
+        # Création des tables si elles n'existent pas
+        cur.execute("""
+            CREATE TABLE IF NOT EXISTS gmao_users (
+                id SERIAL PRIMARY KEY,
+                username TEXT UNIQUE,
+                password_hash TEXT,
+                role TEXT,
+                nom_complet TEXT
+            );
+            CREATE TABLE IF NOT EXISTS interventions (
+                id SERIAL PRIMARY KEY,
+                date_saisie TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                ligne_production TEXT,
+                machine_num TEXT,
+                nom_operateur_intervenant TEXT,
+                description TEXT,
+                id_referent INTEGER,
+                statut TEXT DEFAULT 'en_attente',
+                valide_par_tech TEXT
+            );
+        """)
+
+        # Insertion des noms
         sql = """
         INSERT INTO gmao_users (username, password_hash, role, nom_complet) VALUES 
         ('Sébastien', '0000', 'technicien', 'Sébastien'),
@@ -149,9 +142,10 @@ def setup_db():
         conn.commit()
         cur.close()
         conn.close()
-        return "Base de données mise à jour avec les 12 profils !"
+        return "Base de données prête et profils créés !"
     except Exception as e:
         return str(e)
+
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 10000))
     app.run(host='0.0.0.0', port=port)
