@@ -23,7 +23,6 @@ def home():
 def page_operateur():
     return render_template('operateur.html')
 
-# Note : On utilise /login car c'est ce que tes boutons HTML appellent
 @app.route('/login')
 def page_login():
     return render_template('login.html')
@@ -58,13 +57,13 @@ def login_gmao():
     except Exception as e:
         return jsonify({"status": "error", "message": str(e)}), 500
 
+# Enregistrement par le Référent
 @app.route('/api/save_intervention', methods=['POST'])
 def save_intervention():
     data = request.json
     try:
         conn = get_db_connection()
         cur = conn.cursor()
-        # On ajoute le statut 'en_attente' par défaut
         cur.execute("""
             INSERT INTO interventions (ligne_production, machine_num, nom_operateur_intervenant, description, id_referent, statut)
             VALUES (%s, %s, %s, %s, %s, 'en_attente')
@@ -76,16 +75,19 @@ def save_intervention():
     except Exception as e:
         return jsonify({"status": "error", "message": str(e)}), 500
 
-@app.route('/api/historique/<int:referent_id>', methods=['GET'])
-def get_historique(referent_id):
+# Historique Global pour les Techniciens (Uniquement les 'en_attente')
+@app.route('/api/historique_global')
+def get_historique_global():
     try:
         conn = get_db_connection()
         cur = conn.cursor()
         cur.execute("""
-            SELECT * FROM interventions 
-            WHERE id_referent = %s AND date_saisie > NOW() - INTERVAL '30 days'
-            ORDER BY date_saisie DESC
-        """, (referent_id,))
+            SELECT i.*, u.nom_complet 
+            FROM interventions i
+            LEFT JOIN gmao_users u ON i.id_referent = u.id
+            WHERE i.statut = 'en_attente'
+            ORDER BY i.date_saisie ASC
+        """)
         rows = cur.fetchall()
         cur.close()
         conn.close()
@@ -93,13 +95,33 @@ def get_historique(referent_id):
     except Exception as e:
         return jsonify({"status": "error", "message": str(e)}), 500
 
+# Validation par le Technicien
+@app.route('/api/valider_intervention', methods=['POST'])
+def valider_intervention():
+    data = request.json
+    try:
+        conn = get_db_connection()
+        cur = conn.cursor()
+        cur.execute("""
+            UPDATE interventions 
+            SET statut = 'valide', valide_par_tech = %s 
+            WHERE id = %s
+        """, (data['id_tech'], data['id_intervention']))
+        conn.commit()
+        cur.close()
+        conn.close()
+        return jsonify({"status": "success"})
+    except Exception as e:
+        return jsonify({"status": "error", "message": str(e)}), 500
+
+# --- SETUP BASE DE DONNÉES ---
+
 @app.route('/setup_db')
 def setup_db():
     try:
         conn = get_db_connection()
         cur = conn.cursor()
         
-        # Création des tables si elles n'existent pas
         cur.execute("""
             CREATE TABLE IF NOT EXISTS gmao_users (
                 id SERIAL PRIMARY KEY,
@@ -121,7 +143,6 @@ def setup_db():
             );
         """)
 
-        # Insertion des noms
         sql = """
         INSERT INTO gmao_users (username, password_hash, role, nom_complet) VALUES 
         ('Sébastien', '0000', 'technicien', 'Sébastien'),
