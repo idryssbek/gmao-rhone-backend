@@ -2,30 +2,86 @@
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
-    <title>Saisie Référent</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GMAO - Saisie Référent</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <style>
+        .grid-options { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px; margin-bottom: 20px; }
+        .option-btn { background: #1a1f26; border: 2px solid #2d353f; padding: 15px; border-radius: 10px; text-align: center; cursor: pointer; color: white; transition: 0.2s; font-weight: bold; }
+        .option-btn.active { border-color: #38bdf8; background: rgba(56, 189, 248, 0.1); box-shadow: 0 0 10px rgba(56, 189, 248, 0.3); }
+        .btn-send { background: #10b981; color: white; border: none; width: 100%; padding: 20px; border-radius: 12px; font-size: 1.2rem; font-weight: bold; cursor: pointer; margin-top: 20px; }
+    </style>
 </head>
 <body>
-    <div class="admin-container">
-        <h2>Saisie d'Intervention</h2>
-        <div class="form-grid">
-            <select id="ligne">
-                <option value="">Sélectionner la Ligne</option>
-                <option value="Ligne 1">Ligne 1 - Emballage</option>
-                <option value="Ligne 2">Ligne 2 - Conditionnement</option>
-                <option value="Ligne 3">Ligne 3 - Expédition</option>
-            </select>
-            <input type="text" id="machine" placeholder="N° de Machine">
-            <input type="text" id="nom_op" placeholder="Nom de l'opérateur concerné">
-            <textarea id="desc" placeholder="Détails de l'acte technique..."></textarea>
-            <button onclick="envoyerIntervention()" class="btn-primary">Valider l'acte</button>
+    <div class="main-container">
+        <h2 style="color: #38bdf8;">Nouvelle Intervention</h2>
+        <p id="user-display" style="color: #666; margin-bottom: 20px;">Référent : -</p>
+
+        <h3>1. Ligne de production</h3>
+        <div class="grid-options">
+            <div class="option-btn" onclick="selectItem('ligne', 'Ligne A', this)">Ligne A</div>
+            <div class="option-btn" onclick="selectItem('ligne', 'Ligne B', this)">Ligne B</div>
+            <div class="option-btn" onclick="selectItem('ligne', 'Ligne C', this)">Ligne C</div>
+            <div class="option-btn" onclick="selectItem('ligne', 'Ligne D', this)">Ligne D</div>
         </div>
 
-        <hr>
-        <h3>Mon Historique (30 derniers jours)</h3>
-        <div id="historique-list">
-            </div>
+        <h3>2. N° Machine</h3>
+        <div class="grid-options">
+            <div class="option-btn" onclick="selectItem('machine', 'M01', this)">M01</div>
+            <div class="option-btn" onclick="selectItem('machine', 'M02', this)">M02</div>
+            <div class="option-btn" onclick="selectItem('machine', 'M03', this)">M03</div>
+            <div class="option-btn" onclick="selectItem('machine', 'M04', this)">M04</div>
+            <div class="option-btn" onclick="selectItem('machine', 'N/A', this)">N/A</div>
+        </div>
+
+        <h3>3. Type de travail</h3>
+        <div class="grid-options">
+            <div class="option-btn" onclick="selectItem('acte', 'Réglage', this)">Réglage</div>
+            <div class="option-btn" onclick="selectItem('acte', 'Changement outil', this)">Changement</div>
+            <div class="option-btn" onclick="selectItem('acte', 'Panne', this)">Panne</div>
+            <div class="option-btn" onclick="selectItem('acte', 'Nettoyage', this)">Nettoyage</div>
+        </div>
+
+        <h3>4. Temps passé</h3>
+        <div class="grid-options">
+            <div class="option-btn" onclick="selectItem('temps', '15 min', this)">15 min</div>
+            <div class="option-btn" onclick="selectItem('temps', '30 min', this)">30 min</div>
+            <div class="option-btn" onclick="selectItem('temps', '1h', this)">1h</div>
+            <div class="option-btn" onclick="selectItem('temps', '+2h', this)">+2h</div>
+        </div>
+
+        <button class="btn-send" onclick="envoyerIntervention()">ENVOYER À LA MAINTENANCE</button>
+        <button onclick="window.location.href='/'" style="background:none; border:none; color:#666; width:100%; margin-top:20px; cursor:pointer;">← Annuler</button>
     </div>
-    <script src="{{ url_for('static', filename='script.js') }}"></script>
+
+    <script>
+        let selection = { ligne: '', machine: '', acte: '', temps: '' };
+        document.getElementById('user-display').innerText = "Référent : " + localStorage.getItem('user_nom');
+
+        function selectItem(type, value, element) {
+            selection[type] = value;
+            let siblings = element.parentElement.children;
+            for (let s of siblings) s.classList.remove('active');
+            element.classList.add('active');
+        }
+
+        async function envoyerIntervention() {
+            if(!selection.ligne || !selection.machine || !selection.acte || !selection.temps) {
+                alert("Merci de remplir toutes les étapes."); return;
+            }
+            const data = {
+                ligne: selection.ligne,
+                machine: selection.machine,
+                nom_op: localStorage.getItem('user_nom'),
+                description: selection.acte + " (Temps: " + selection.temps + ")",
+                id_referent: localStorage.getItem('user_id')
+            };
+            const res = await fetch('/api/save_intervention', {
+                method: 'POST', headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify(data)
+            });
+            if(res.ok) { alert("Transmis aux techniciens !"); window.location.href = '/'; }
+        }
+    </script>
 </body>
 </html>
