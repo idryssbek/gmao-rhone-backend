@@ -2,36 +2,147 @@
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
-    <title>GMAO - Identification Rapide</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GMAO - Connexion</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <style>
+        /* Style spécifique pour le Keypad style iPhone */
+        .keypad {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+            max-width: 280px;
+            margin: 20px auto;
+        }
+        .key {
+            width: 70px;
+            height: 70px;
+            border-radius: 50%;
+            border: 1px solid rgba(255,255,255,0.2);
+            background: rgba(255,255,255,0.05);
+            color: white;
+            font-size: 1.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+        .key:active { background: var(--accent-blue); transform: scale(0.9); }
+        
+        .dots {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        .dot {
+            width: 15px;
+            height: 15px;
+            border: 2px solid var(--accent-blue);
+            border-radius: 50%;
+        }
+        .dot.active { background: var(--accent-blue); }
+    </style>
 </head>
 <body>
     <div class="main-container">
-        <h1>Qui êtes-vous ?</h1>
-        <p style="color: var(--text-dim); margin-bottom: 2rem;">Accès direct à votre espace de saisie</p>
+        <div id="step-names">
+            <h1>Qui êtes-vous ?</h1>
+            <div class="grid-selection" id="users-grid">
+                <div class="card-user" onclick="showKeypad('Jean', 1)">
+                    <div class="avatar">J</div><span>Jean</span>
+                </div>
+                <div class="card-user" onclick="showKeypad('Marc', 2)">
+                    <div class="avatar">M</div><span>Marc</span>
+                </div>
+                </div>
+        </div>
 
-        <div class="grid-selection">
-            <div class="card-user" onclick="connexionDirecte('Jean', 1)">
-                <div class="avatar">J</div><span>Jean</span>
+        <div id="step-pin" style="display:none;">
+            <h1 id="welcome-name">Code PIN</h1>
+            <div class="dots" id="pin-dots">
+                <div class="dot"></div><div class="dot"></div><div class="dot"></div><div class="dot"></div>
             </div>
-            <div class="card-user" onclick="connexionDirecte('Marc', 2)">
-                <div class="avatar">M</div><span>Marc</span>
+            
+            <div class="keypad">
+                <div class="key" onclick="pressKey('1')">1</div>
+                <div class="key" onclick="pressKey('2')">2</div>
+                <div class="key" onclick="pressKey('3')">3</div>
+                <div class="key" onclick="pressKey('4')">4</div>
+                <div class="key" onclick="pressKey('5')">5</div>
+                <div class="key" onclick="pressKey('6')">6</div>
+                <div class="key" onclick="pressKey('7')">7</div>
+                <div class="key" onclick="pressKey('8')">8</div>
+                <div class="key" onclick="pressKey('9')">9</div>
+                <div></div>
+                <div class="key" onclick="pressKey('0')">0</div>
+                <div class="key" onclick="clearPin()">⌫</div>
             </div>
-            <div class="card-user" onclick="connexionDirecte('Sophie', 3)">
-                <div class="avatar">S</div><span>Sophie</span>
-            </div>
-            </div>
+            <button onclick="cancelPin()" style="background:none; border:none; color:var(--text-dim); cursor:pointer; margin-top:20px;">← Annuler</button>
+        </div>
     </div>
 
     <script>
-        function connexionDirecte(nom, id) {
-            // On stocke l'identité localement sans demander de mot de passe
-            localStorage.setItem('user_id', id);
-            localStorage.setItem('user_nom', nom);
-            localStorage.setItem('user_role', 'referent');
-            
-            // Redirection immédiate
-            window.location.href = '/page_referent';
+        let currentPin = "";
+        let selectedUser = { name: "", id: null };
+
+        function showKeypad(name, id) {
+            selectedUser = { name: name, id: id };
+            document.getElementById('welcome-name').innerText = "Bonjour " + name;
+            document.getElementById('step-names').style.display = 'none';
+            document.getElementById('step-pin').style.display = 'block';
+        }
+
+        function cancelPin() {
+            currentPin = "";
+            updateDots();
+            document.getElementById('step-pin').style.display = 'none';
+            document.getElementById('step-names').style.display = 'block';
+        }
+
+        function pressKey(num) {
+            if (currentPin.length < 4) {
+                currentPin += num;
+                updateDots();
+                if (currentPin.length === 4) {
+                    verifyPin();
+                }
+            }
+        }
+
+        function clearPin() {
+            currentPin = currentPin.slice(0, -1);
+            updateDots();
+        }
+
+        function updateDots() {
+            const dots = document.querySelectorAll('.dot');
+            dots.forEach((dot, index) => {
+                if (index < currentPin.length) dot.classList.add('active');
+                else dot.classList.remove('active');
+            });
+        }
+
+        async function verifyPin() {
+            const response = await fetch('/login_gmao', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({
+                    username: selectedUser.name,
+                    password: currentPin
+                })
+            });
+            const data = await response.json();
+            if (data.status === "success") {
+                localStorage.setItem('user_id', data.id);
+                localStorage.setItem('user_nom', data.nom);
+                window.location.href = '/page_referent';
+            } else {
+                alert("Code incorrect");
+                currentPin = "";
+                updateDots();
+            }
         }
     </script>
 </body>
