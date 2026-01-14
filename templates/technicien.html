@@ -1,44 +1,115 @@
-<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
-<html>
+<!DOCTYPE html>
+<html lang="fr">
 <head>
-  <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
-  <meta http-equiv="Content-Style-Type" content="text/css">
-  <title></title>
-  <meta name="Generator" content="Cocoa HTML Writer">
-  <meta name="CocoaVersion" content="2575.2">
-  <style type="text/css">
-    span.s1 {font-kerning: none}
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GMAO - Validation Technique</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <style>
+        .table-container { margin-top: 20px; overflow-x: auto; }
+        table { width: 100%; border-collapse: collapse; background: rgba(255,255,255,0.02); border-radius: 12px; overflow: hidden; }
+        th { background: #2d353f; color: #fb923c; padding: 15px; text-align: left; text-transform: uppercase; font-size: 0.8rem; }
+        td { padding: 15px; border-bottom: 1px solid rgba(255,255,255,0.05); color: #e5e7eb; }
+        
+        .badge-pending { background: rgba(251, 146, 60, 0.1); color: #fb923c; padding: 5px 10px; border-radius: 6px; font-size: 0.8rem; border: 1px solid rgba(251, 146, 60, 0.2); }
+        
+        .btn-validate { background: #10b981; color: white; border: none; padding: 8px 15px; border-radius: 6px; cursor: pointer; font-weight: bold; transition: 0.3s; }
+        .btn-validate:hover { background: #059669; transform: scale(1.05); }
+        .btn-validate:disabled { background: #374151; cursor: not-allowed; opacity: 0.5; }
+
+        .empty-state { text-align: center; padding: 50px; color: #666; font-style: italic; }
+    </style>
 </head>
 <body>
-<h2 style="margin: 0.0px 0.0px 14.9px 0.0px; font: 10.0px Times; -webkit-text-stroke: #000000"><span class="s1"><b>&lt;!DOCTYPE html&gt;</b></span></h2>
-<h2 style="margin: 0.0px 0.0px 14.9px 0.0px; font: 10.0px Times; -webkit-text-stroke: #000000"><span class="s1"><b>&lt;html lang="fr"&gt;</b></span></h2>
-<h2 style="margin: 0.0px 0.0px 14.9px 0.0px; font: 10.0px Times; -webkit-text-stroke: #000000"><span class="s1"><b>&lt;head&gt;</b></span></h2>
-<h2 style="margin: 0.0px 0.0px 14.9px 0.0px; font: 10.0px Times; -webkit-text-stroke: #000000"><span class="s1"><b><span class="Apple-converted-space">    </span>&lt;meta charset="UTF-8"&gt;</b></span></h2>
-<h2 style="margin: 0.0px 0.0px 14.9px 0.0px; font: 10.0px Times; -webkit-text-stroke: #000000"><span class="s1"><b><span class="Apple-converted-space">    </span>&lt;meta name="viewport" content="width=device-width, initial-scale=1.0"&gt;</b></span></h2>
-<h2 style="margin: 0.0px 0.0px 14.9px 0.0px; font: 10.0px Times; -webkit-text-stroke: #000000"><span class="s1"><b><span class="Apple-converted-space">    </span>&lt;title&gt;GMAO - Saisie&lt;/title&gt;</b></span></h2>
-<h2 style="margin: 0.0px 0.0px 14.9px 0.0px; font: 10.0px Times; -webkit-text-stroke: #000000"><span class="s1"><b><span class="Apple-converted-space">    </span>&lt;style&gt;</b></span></h2>
-<h2 style="margin: 0.0px 0.0px 14.9px 0.0px; font: 10.0px Times; -webkit-text-stroke: #000000"><span class="s1"><b><span class="Apple-converted-space">        </span>body { font-family: sans-serif; background-color: #f0f2f5; padding: 15px; }</b></span></h2>
-<h2 style="margin: 0.0px 0.0px 14.9px 0.0px; font: 10.0px Times; -webkit-text-stroke: #000000"><span class="s1"><b><span class="Apple-converted-space">        </span>.form-card { background: white; padding: 20px; border-radius: 12px; max-width: 500px; margin: auto; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }</b></span></h2>
-<h2 style="margin: 0.0px 0.0px 14.9px 0.0px; font: 10.0px Times; -webkit-text-stroke: #000000"><span class="s1"><b><span class="Apple-converted-space">        </span>.form-group { margin-bottom: 15px; }</b></span></h2>
-<h2 style="margin: 0.0px 0.0px 14.9px 0.0px; font: 10.0px Times; -webkit-text-stroke: #000000"><span class="s1"><b><span class="Apple-converted-space">        </span>input, textarea, select { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 16px; }</b></span></h2>
-<h2 style="margin: 0.0px 0.0px 14.9px 0.0px; font: 10.0px Times; -webkit-text-stroke: #000000"><span class="s1"><b><span class="Apple-converted-space">        </span>.btn-submit { background-color: #28a745; color: white; border: none; padding: 15px; width: 100%; border-radius: 8px; font-size: 18px; cursor: pointer; }</b></span></h2>
-<h2 style="margin: 0.0px 0.0px 14.9px 0.0px; font: 10.0px Times; -webkit-text-stroke: #000000"><span class="s1"><b><span class="Apple-converted-space">    </span>&lt;/style&gt;</b></span></h2>
-<h2 style="margin: 0.0px 0.0px 14.9px 0.0px; font: 10.0px Times; -webkit-text-stroke: #000000"><span class="s1"><b>&lt;/head&gt;</b></span></h2>
-<h2 style="margin: 0.0px 0.0px 14.9px 0.0px; font: 10.0px Times; -webkit-text-stroke: #000000"><span class="s1"><b>&lt;body&gt;</b></span></h2>
-<h2 style="margin: 0.0px 0.0px 14.9px 0.0px; font: 10.0px Times; -webkit-text-stroke: #000000"><span class="s1"><b>&lt;div class="form-card"&gt;</b></span></h2>
-<h2 style="margin: 0.0px 0.0px 14.9px 0.0px; font: 10.0px Times; -webkit-text-stroke: #000000"><span class="s1"><b><span class="Apple-converted-space">    </span>&lt;h2&gt;Nouvelle Intervention&lt;/h2&gt;</b></span></h2>
-<h2 style="margin: 0.0px 0.0px 14.9px 0.0px; font: 10.0px Times; -webkit-text-stroke: #000000"><span class="s1"><b><span class="Apple-converted-space">    </span>&lt;form method="POST"&gt;</b></span></h2>
-<h2 style="margin: 0.0px 0.0px 14.9px 0.0px; font: 10.0px Times; -webkit-text-stroke: #000000"><span class="s1"><b><span class="Apple-converted-space">        </span>&lt;div class="form-group"&gt;&lt;label&gt;Machine&lt;/label&gt;&lt;input type="text" name="machine" required&gt;&lt;/div&gt;</b></span></h2>
-<h2 style="margin: 0.0px 0.0px 14.9px 0.0px; font: 10.0px Times; -webkit-text-stroke: #000000"><span class="s1"><b><span class="Apple-converted-space">        </span>&lt;div class="form-group"&gt;&lt;label&gt;Ligne&lt;/label&gt;&lt;input type="text" name="ligne" required&gt;&lt;/div&gt;</b></span></h2>
-<h2 style="margin: 0.0px 0.0px 14.9px 0.0px; font: 10.0px Times; -webkit-text-stroke: #000000"><span class="s1"><b><span class="Apple-converted-space">        </span>&lt;div class="form-group"&gt;&lt;label&gt;Cause&lt;/label&gt;&lt;textarea name="cause" required&gt;&lt;/textarea&gt;&lt;/div&gt;</b></span></h2>
-<h2 style="margin: 0.0px 0.0px 14.9px 0.0px; font: 10.0px Times; -webkit-text-stroke: #000000"><span class="s1"><b><span class="Apple-converted-space">        </span>&lt;div class="form-group"&gt;&lt;label&gt;Action&lt;/label&gt;&lt;textarea name="action" required&gt;&lt;/textarea&gt;&lt;/div&gt;</b></span></h2>
-<h2 style="margin: 0.0px 0.0px 14.9px 0.0px; font: 10.0px Times; -webkit-text-stroke: #000000"><span class="s1"><b><span class="Apple-converted-space">        </span>&lt;div class="form-group"&gt;&lt;label&gt;Temps&lt;/label&gt;&lt;input type="text" name="temps" required&gt;&lt;/div&gt;</b></span></h2>
-<h2 style="margin: 0.0px 0.0px 14.9px 0.0px; font: 10.0px Times; -webkit-text-stroke: #000000"><span class="s1"><b><span class="Apple-converted-space">        </span>&lt;button type="submit" class="btn-submit"&gt;Enregistrer&lt;/button&gt;</b></span></h2>
-<h2 style="margin: 0.0px 0.0px 14.9px 0.0px; font: 10.0px Times; -webkit-text-stroke: #000000"><span class="s1"><b><span class="Apple-converted-space">        </span>&lt;a href="{{ url_for('index') }}"&gt;Annuler&lt;/a&gt;</b></span></h2>
-<h2 style="margin: 0.0px 0.0px 14.9px 0.0px; font: 10.0px Times; -webkit-text-stroke: #000000"><span class="s1"><b><span class="Apple-converted-space">    </span>&lt;/form&gt;</b></span></h2>
-<h2 style="margin: 0.0px 0.0px 14.9px 0.0px; font: 10.0px Times; -webkit-text-stroke: #000000"><span class="s1"><b>&lt;/div&gt;</b></span></h2>
-<h2 style="margin: 0.0px 0.0px 14.9px 0.0px; font: 10.0px Times; -webkit-text-stroke: #000000"><span class="s1"><b>&lt;/body&gt;</b></span></h2>
-<h2 style="margin: 0.0px 0.0px 14.9px 0.0px; font: 10.0px Times; -webkit-text-stroke: #000000"><span class="s1"><b>&lt;/html&gt;</b></span></h2>
+    <div class="main-container">
+        <header style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px;">
+            <div>
+                <h1 style="color: #fb923c;">Tableau de Bord Tech</h1>
+                <p id="tech-name" style="color: #666;">Connecté : -</p>
+            </div>
+            <button onclick="window.location.href='/'" class="btn-secondary" style="padding: 10px 20px;">DÉCONNEXION</button>
+        </header>
+
+        <div class="table-container">
+            <table id="interventions-table">
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>Ligne</th>
+                        <th>Référent</th>
+                        <th>Description</th>
+                        <th>Statut</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody id="table-body">
+                    </tbody>
+            </table>
+            <div id="no-data" class="empty-state" style="display:none;">Aucune intervention en attente.</div>
+        </div>
+    </div>
+
+    <script>
+        const techNom = localStorage.getItem('user_nom');
+        const techId = localStorage.getItem('user_id');
+        document.getElementById('tech-name').innerText = "Technicien : " + techNom;
+
+        // Charger les interventions au démarrage
+        async function loadInterventions() {
+            try {
+                // On récupère TOUTES les interventions (le technicien voit tout)
+                const response = await fetch('/api/historique_global'); 
+                const data = await response.json();
+                
+                const tbody = document.getElementById('table-body');
+                tbody.innerHTML = "";
+
+                if (data.length === 0) {
+                    document.getElementById('no-data').style.display = "block";
+                    return;
+                }
+
+                data.forEach(item => {
+                    const date = new Date(item.date_saisie).toLocaleString('fr-FR', {day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit'});
+                    const row = `
+                        <tr>
+                            <td>${date}</td>
+                            <td><b style="color:#38bdf8">${item.ligne_production}</b></td>
+                            <td>${item.nom_complet || 'Référent'}</td>
+                            <td>${item.description}</td>
+                            <td><span class="badge-pending">En attente</span></td>
+                            <td>
+                                <button class="btn-validate" onclick="validerIntervention(${item.id})">VALIDER</button>
+                            </td>
+                        </tr>
+                    `;
+                    tbody.innerHTML += row;
+                });
+            } catch (error) {
+                console.error("Erreur de chargement:", error);
+            }
+        }
+
+        async function validerIntervention(id) {
+            if (!confirm("Confirmer la clôture de cette intervention ?")) return;
+
+            const response = await fetch('/api/valider_intervention', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ 
+                    id_intervention: id,
+                    id_tech: techNom // On enregistre qui a validé
+                })
+            });
+
+            if (response.ok) {
+                loadInterventions(); // Recharger la liste
+            } else {
+                alert("Erreur lors de la validation");
+            }
+        }
+
+        loadInterventions();
+    </script>
 </body>
 </html>
