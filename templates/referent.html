@@ -6,81 +6,102 @@
     <title>GMAO - Saisie Référent</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
     <style>
-        .grid-options { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px; margin-bottom: 20px; }
-        .option-btn { background: #1a1f26; border: 2px solid #2d353f; padding: 15px; border-radius: 10px; text-align: center; cursor: pointer; color: white; transition: 0.2s; font-weight: bold; }
-        .option-btn.active { border-color: #38bdf8; background: rgba(56, 189, 248, 0.1); box-shadow: 0 0 10px rgba(56, 189, 248, 0.3); }
-        .btn-send { background: #10b981; color: white; border: none; width: 100%; padding: 20px; border-radius: 12px; font-size: 1.2rem; font-weight: bold; cursor: pointer; margin-top: 20px; }
+        .form-group { margin-bottom: 20px; }
+        label { display: block; color: #38bdf8; margin-bottom: 8px; font-weight: bold; text-transform: uppercase; font-size: 0.9rem; }
+        input, select, textarea { 
+            width: 100%; padding: 15px; background: #1a1f26; border: 2px solid #2d353f; 
+            border-radius: 10px; color: white; font-size: 1rem; box-sizing: border-box;
+        }
+        textarea { height: 80px; resize: none; }
+        .btn-send { 
+            background: #10b981; color: white; border: none; width: 100%; padding: 20px; 
+            border-radius: 12px; font-size: 1.2rem; font-weight: bold; cursor: pointer; margin-top: 10px; 
+        }
     </style>
 </head>
 <body>
     <div class="main-container">
-        <h2 style="color: #38bdf8;">Nouvelle Intervention</h2>
-        <p id="user-display" style="color: #666; margin-bottom: 20px;">Référent : -</p>
+        <h2 style="color: #38bdf8; margin-top: 0;">Nouvelle Intervention</h2>
+        <p id="user-display" style="color: #666; margin-bottom: 25px;">Connecté : -</p>
 
-        <h3>1. Ligne de production</h3>
-        <div class="grid-options">
-            <div class="option-btn" onclick="selectItem('ligne', 'Ligne A', this)">Ligne A</div>
-            <div class="option-btn" onclick="selectItem('ligne', 'Ligne B', this)">Ligne B</div>
-            <div class="option-btn" onclick="selectItem('ligne', 'Ligne C', this)">Ligne C</div>
-            <div class="option-btn" onclick="selectItem('ligne', 'Ligne D', this)">Ligne D</div>
+        <div class="form-group">
+            <label>1. Ligne de Production</label>
+            <select id="ligne">
+                <option value="">-- Sélectionner la ligne --</option>
+                <option value="Ligne A">Ligne A</option>
+                <option value="Ligne B">Ligne B</option>
+                <option value="Ligne C">Ligne C</option>
+                <option value="Ligne D">Ligne D</option>
+            </select>
         </div>
 
-        <h3>2. N° Machine</h3>
-        <div class="grid-options">
-            <div class="option-btn" onclick="selectItem('machine', 'M01', this)">M01</div>
-            <div class="option-btn" onclick="selectItem('machine', 'M02', this)">M02</div>
-            <div class="option-btn" onclick="selectItem('machine', 'M03', this)">M03</div>
-            <div class="option-btn" onclick="selectItem('machine', 'M04', this)">M04</div>
-            <div class="option-btn" onclick="selectItem('machine', 'N/A', this)">N/A</div>
+        <div class="form-group">
+            <label>2. N° Machine (Saisie manuelle)</label>
+            <input type="text" id="machine" placeholder="Ex: M05, Presse 2...">
         </div>
 
-        <h3>3. Type de travail</h3>
-        <div class="grid-options">
-            <div class="option-btn" onclick="selectItem('acte', 'Réglage', this)">Réglage</div>
-            <div class="option-btn" onclick="selectItem('acte', 'Changement outil', this)">Changement</div>
-            <div class="option-btn" onclick="selectItem('acte', 'Panne', this)">Panne</div>
-            <div class="option-btn" onclick="selectItem('acte', 'Nettoyage', this)">Nettoyage</div>
+        <div class="form-group">
+            <label>3. Problème constaté</label>
+            <textarea id="probleme" placeholder="Décrivez le défaut..."></textarea>
         </div>
 
-        <h3>4. Temps passé</h3>
-        <div class="grid-options">
-            <div class="option-btn" onclick="selectItem('temps', '15 min', this)">15 min</div>
-            <div class="option-btn" onclick="selectItem('temps', '30 min', this)">30 min</div>
-            <div class="option-btn" onclick="selectItem('temps', '1h', this)">1h</div>
-            <div class="option-btn" onclick="selectItem('temps', '+2h', this)">+2h</div>
+        <div class="form-group">
+            <label>4. Action réalisée</label>
+            <textarea id="action" placeholder="Qu'avez-vous fait ?"></textarea>
         </div>
 
-        <button class="btn-send" onclick="envoyerIntervention()">ENVOYER À LA MAINTENANCE</button>
-        <button onclick="window.location.href='/'" style="background:none; border:none; color:#666; width:100%; margin-top:20px; cursor:pointer;">← Annuler</button>
+        <div class="form-group">
+            <label>5. Temps passé</label>
+            <select id="temps"></select>
+        </div>
+
+        <button class="btn-send" onclick="envoyerIntervention()">VALIDER L'INTERVENTION</button>
+        <button onclick="window.location.href='/'" style="background:none; border:none; color:#666; width:100%; margin-top:15px; cursor:pointer;">Annuler et retour</button>
     </div>
 
     <script>
-        let selection = { ligne: '', machine: '', acte: '', temps: '' };
         document.getElementById('user-display').innerText = "Référent : " + localStorage.getItem('user_nom');
 
-        function selectItem(type, value, element) {
-            selection[type] = value;
-            let siblings = element.parentElement.children;
-            for (let s of siblings) s.classList.remove('active');
-            element.classList.add('active');
+        // Générer le menu déroulant du temps (5min à 180min)
+        const selectTemps = document.getElementById('temps');
+        for (let i = 5; i <= 180; i += 5) {
+            let h = Math.floor(i / 60);
+            let m = i % 60;
+            let label = h > 0 ? `${h}h${m > 0 ? m : '00'}` : `${m} min`;
+            let option = new Option(label, label);
+            selectTemps.add(option);
         }
 
         async function envoyerIntervention() {
-            if(!selection.ligne || !selection.machine || !selection.acte || !selection.temps) {
-                alert("Merci de remplir toutes les étapes."); return;
+            const ligne = document.getElementById('ligne').value;
+            const machine = document.getElementById('machine').value;
+            const prob = document.getElementById('probleme').value;
+            const act = document.getElementById('action').value;
+            const temps = document.getElementById('temps').value;
+
+            if(!ligne || !machine || !prob) {
+                alert("Merci de remplir au moins la ligne, la machine et le problème.");
+                return;
             }
+
             const data = {
-                ligne: selection.ligne,
-                machine: selection.machine,
+                ligne: ligne,
+                machine: machine,
                 nom_op: localStorage.getItem('user_nom'),
-                description: selection.acte + " (Temps: " + selection.temps + ")",
+                description: `PROBLÈME: ${prob} | ACTION: ${act} | TEMPS: ${temps}`,
                 id_referent: localStorage.getItem('user_id')
             };
+
             const res = await fetch('/api/save_intervention', {
-                method: 'POST', headers: {'Content-Type': 'application/json'},
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
                 body: JSON.stringify(data)
             });
-            if(res.ok) { alert("Transmis aux techniciens !"); window.location.href = '/'; }
+
+            if(res.ok) {
+                alert("Intervention enregistrée !");
+                window.location.href = '/';
+            }
         }
     </script>
 </body>
