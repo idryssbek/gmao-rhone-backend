@@ -1,33 +1,119 @@
-async function tenterConnexion() {
-    const user = document.getElementById('nom-select').value;
-    const pin = document.getElementById('pin-input').value;
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GMAO - Connexion</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <style>
+        body { background: #0f172a; color: white; font-family: sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
+        .login-card { background: #1e293b; padding: 40px; border-radius: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.5); width: 100%; max-width: 400px; text-align: center; }
+        h2 { color: #38bdf8; text-transform: uppercase; margin-bottom: 30px; }
+        select, input { width: 100%; padding: 15px; margin-bottom: 20px; border-radius: 10px; border: 2px solid #334155; background: #0f172a; color: white; font-size: 1rem; box-sizing: border-box; }
+        button { width: 100%; padding: 15px; border-radius: 10px; border: none; background: #38bdf8; color: white; font-weight: bold; font-size: 1.1rem; cursor: pointer; }
+        .back-link { display: block; margin-top: 20px; color: #64748b; text-decoration: none; font-size: 0.9rem; }
+        label { display: block; text-align: left; margin-bottom: 8px; color: #94a3b8; }
+        #pin-container { display: block; }
+    </style>
+</head>
+<body>
 
-    if(!user) {
-        alert("Sélectionne ton nom");
-        return;
-    }
+    <div class="login-card">
+        <h2 id="role-title">Connexion</h2>
+        
+        <label>Sélectionnez votre nom :</label>
+        <select id="nom-select">
+            <option value="">Chargement...</option>
+        </select>
 
-    // SI C'EST UN RÉFÉRENT : On se connecte direct sans vérifier le PIN côté client
-    if(roleCible === 'referent') {
-        const res = await fetch('/api/login_sans_pin', {
-            method: 'POST',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({ username: user })
-        });
-        const data = await res.json();
-        if(data.status === "success") {
-            localStorage.setItem('user_id', data.id);
-            localStorage.setItem('user_nom', data.nom);
-            window.location.href = '/page_referent';
+        <div id="pin-container">
+            <label>Code PIN :</label>
+            <input type="password" id="pin-input" placeholder="****" inputmode="numeric">
+        </div>
+
+        <button onclick="tenterConnexion()">SE CONNECTER</button>
+        
+        <a href="/" class="back-link">← Retour au menu</a>
+    </div>
+
+    <script>
+        const params = new URLSearchParams(window.location.search);
+        const roleCible = params.get('role') || 'technicien';
+
+        // Configuration visuelle au démarrage
+        if(roleCible === 'referent') {
+            document.getElementById('pin-container').style.display = 'none';
+            document.getElementById('role-title').innerText = "Espace Référent";
+        } else {
+            document.getElementById('role-title').innerText = "Espace Technicien";
         }
-        return;
-    }
 
-    // SI C'EST UN ADMIN OU TECH : On garde la sécurité par PIN
-    const res = await fetch('/login_gmao', {
-        method: 'POST',
-        headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({ username: user, password: pin })
-    });
-    // ... reste du code de connexion classique
-}
+        async function chargerUsers() {
+            try {
+                const res = await fetch('/api/admin/users');
+                const users = await res.json();
+                const select = document.getElementById('nom-select');
+                select.innerHTML = '<option value="">-- Choisis ton nom --</option>';
+
+                // FILTRAGE : On garde le rôle correspondant ET on exclut l'admin
+                const filtres = users.filter(u => 
+                    u.role.toLowerCase() === roleCible.toLowerCase() && 
+                    u.username.toLowerCase() !== 'admin'
+                );
+
+                if(filtres.length === 0) {
+                    select.innerHTML = '<option value="">Aucun utilisateur trouvé</option>';
+                }
+
+                filtres.forEach(u => {
+                    select.add(new Option(u.nom_complet, u.username));
+                });
+            } catch (e) { console.error("Erreur:", e); }
+        }
+
+        async function tenterConnexion() {
+            const user = document.getElementById('nom-select').value;
+            const pin = document.getElementById('pin-input').value;
+
+            if(!user) {
+                alert("Sélectionne ton nom");
+                return;
+            }
+
+            // --- LOGIQUE RÉFÉRENT (SANS PIN) ---
+            if(roleCible === 'referent') {
+                const res = await fetch('/api/login_sans_pin', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ username: user })
+                });
+                const data = await res.json();
+                if(data.status === "success") {
+                    localStorage.setItem('user_id', data.id);
+                    localStorage.setItem('user_nom', data.nom);
+                    window.location.href = '/page_referent';
+                }
+                return;
+            }
+
+            // --- LOGIQUE TECHNICIEN (AVEC PIN) ---
+            const res = await fetch('/login_gmao', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ username: user, password: pin })
+            });
+            
+            const data = await res.json();
+            if(data.status === "success") {
+                localStorage.setItem('user_id', data.id);
+                localStorage.setItem('user_nom', data.nom);
+                window.location.href = '/page_technicien';
+            } else {
+                alert("Code PIN incorrect !");
+            }
+        }
+
+        chargerUsers();
+    </script>
+</body>
+</html>
