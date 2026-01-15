@@ -3,41 +3,85 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>GMAO - Connexion</title>
+    <title>GMAO - Identification</title>
     <style>
-        body { background: #0f172a; color: white; font-family: sans-serif; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; padding: 20px; }
-        .login-container { width: 100%; max-width: 900px; text-align: center; }
-        h2 { color: #38bdf8; text-transform: uppercase; margin-bottom: 30px; }
-        
-        /* Grille des noms style iPad */
-        .user-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 15px; margin-bottom: 30px; }
-        .user-card { background: #1e293b; border: 2px solid #334155; padding: 30px 10px; border-radius: 15px; cursor: pointer; transition: 0.3s; font-weight: bold; font-size: 1.2rem; display: flex; align-items: center; justify-content: center; min-height: 80px; }
-        .user-card:hover { border-color: #38bdf8; background: #334155; }
-        .user-card:active { transform: scale(0.95); background: #38bdf8; }
+        :root {
+            --bg: #0f172a;
+            --card-bg: #1e293b;
+            --accent: #38bdf8;
+            --text: #f1f5f9;
+        }
+
+        body { 
+            background: var(--bg); color: var(--text); 
+            font-family: 'Inter', system-ui, sans-serif; 
+            margin: 0; display: flex; justify-content: center; align-items: center; 
+            min-height: 100vh; padding: 20px;
+        }
+
+        .login-container { width: 100%; max-width: 1000px; text-align: center; }
+
+        h2 { font-weight: 600; text-transform: uppercase; color: var(--accent); margin-bottom: 40px; font-size: 1.5rem; }
+
+        /* Grille Pro avec Prénoms */
+        .user-grid { 
+            display: grid; 
+            grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); 
+            gap: 20px; 
+        }
+
+        .user-card { 
+            background: var(--card-bg); 
+            border: 2px solid #334155; 
+            padding: 35px 20px; 
+            border-radius: 16px; 
+            cursor: pointer; 
+            transition: all 0.2s ease;
+            display: flex; justify-content: center; align-items: center;
+        }
+
+        .user-card:hover { 
+            border-color: var(--accent); 
+            background: #243146; 
+            transform: scale(1.03);
+        }
+
+        .user-card:active { transform: scale(0.95); }
+
+        .user-name { font-weight: 600; font-size: 1.3rem; text-align: center; }
 
         /* Pavé Numérique */
-        #auth-section { background: #1e293b; padding: 30px; border-radius: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.5); width: 320px; margin: 0 auto; display: none; }
-        .pin-display { width: 100%; padding: 15px; margin-bottom: 20px; border-radius: 10px; border: 2px solid #334155; background: #0f172a; color: white; font-size: 2rem; text-align: center; letter-spacing: 10px; }
-        .numpad { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
-        .num-btn { background: #334155; color: white; border: none; padding: 20px; border-radius: 10px; font-size: 1.5rem; font-weight: bold; cursor: pointer; }
-        .num-btn:active { background: #38bdf8; }
-        .num-btn.del { background: #ef4444; }
-        .btn-ok { background: #22c55e !important; }
+        #auth-section { 
+            background: var(--card-bg); padding: 40px; border-radius: 24px; 
+            width: 350px; margin: 0 auto; display: none;
+            box-shadow: 0 25px 50px rgba(0,0,0,0.5);
+        }
 
-        .btn-annuler { background: none; border: 1px solid #64748b; color: #64748b; padding: 10px; border-radius: 8px; margin-top: 20px; cursor: pointer; width: 100%; }
-        .back-link { display: block; margin-top: 50px; color: #475569; text-decoration: none; }
+        .pin-view { 
+            font-size: 2.5rem; letter-spacing: 15px; margin-bottom: 30px; 
+            color: var(--accent); min-height: 50px;
+        }
+
+        .numpad { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+        .num-btn { 
+            background: #0f172a; color: white; border: 1px solid #334155; 
+            padding: 20px; border-radius: 12px; font-size: 1.5rem; cursor: pointer; font-weight: bold;
+        }
+        .num-btn:active { background: var(--accent); color: var(--bg); }
+
+        .btn-cancel { margin-top:25px; background:none; border:none; color:#64748b; cursor:pointer; font-size: 1rem; }
     </style>
 </head>
 <body>
 
     <div class="login-container">
-        <h2 id="page-title">Chargement des utilisateurs...</h2>
+        <h2 id="page-title">Sélectionnez votre profil</h2>
         
         <div id="user-list" class="user-grid"></div>
 
         <div id="auth-section">
-            <h3 id="selected-user-name" style="margin-top:0; color:#38bdf8;">Nom</h3>
-            <div class="pin-display" id="pin-view">****</div>
+            <div id="selected-user-name" style="font-size: 1.4rem; margin-bottom: 20px; font-weight: bold; color: var(--accent);"></div>
+            <div class="pin-view" id="pin-view">••••</div>
             <div class="numpad">
                 <button class="num-btn" onclick="pressNum('1')">1</button>
                 <button class="num-btn" onclick="pressNum('2')">2</button>
@@ -48,111 +92,89 @@
                 <button class="num-btn" onclick="pressNum('7')">7</button>
                 <button class="num-btn" onclick="pressNum('8')">8</button>
                 <button class="num-btn" onclick="pressNum('9')">9</button>
-                <button class="num-btn del" onclick="pressNum('del')">⌫</button>
+                <button class="num-btn" style="color:#ef4444" onclick="pressNum('del')">←</button>
                 <button class="num-btn" onclick="pressNum('0')">0</button>
-                <button class="num-btn btn-ok" onclick="validerConnexion()">OK</button>
+                <button class="num-btn" style="color:#22c55e" onclick="validerConnexion()">OK</button>
             </div>
-            <button class="btn-annuler" onclick="annuler()">RETOUR</button>
+            <button class="btn-cancel" onclick="location.reload()">← Retour à la liste</button>
         </div>
-        
-        <a href="/" class="back-link">Retour Menu Principal</a>
     </div>
 
     <script>
-        // Récupère le rôle dans l'URL (?role=referent ou ?role=technicien)
         const params = new URLSearchParams(window.location.search);
-        let roleCible = params.get('role') || 'technicien';
-        
-        // Nettoyage pour éviter les erreurs d'accentuation (ex: Référent -> referent)
-        const roleNettoye = roleCible.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-
-        let selectedUser = null;
+        const roleCible = params.get('role') || 'technicien';
         let currentPin = "";
+        let selectedUser = null;
 
-        async function chargerUsers() {
+        function displayUsers(users) {
+            const container = document.getElementById('user-list');
+            if (!container) return;
+            container.innerHTML = "";
+
+            const filtres = users.filter(u => 
+                u.role.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").includes(roleCible) 
+                && u.username.toLowerCase() !== 'admin'
+            );
+
+            filtres.forEach(u => {
+                const card = document.createElement('div');
+                card.className = 'user-card';
+                card.innerHTML = `<div class="user-name">${u.nom_complet}</div>`;
+                card.onclick = () => {
+                    selectedUser = u;
+                    if(roleCible === 'referent') validerConnexion();
+                    else showNumpad(u.nom_complet);
+                };
+                container.appendChild(card);
+            });
+        }
+
+        function showNumpad(name) {
+            document.getElementById('user-list').style.display = 'none';
+            document.getElementById('page-title').style.display = 'none';
+            document.getElementById('auth-section').style.display = 'block';
+            document.getElementById('selected-user-name').innerText = name;
+        }
+
+        async function init() {
+            // Affichage immédiat via cache
+            const cached = localStorage.getItem(`cache_users_${roleCible}`);
+            if(cached) displayUsers(JSON.parse(cached));
+
+            // Mise à jour silencieuse
             try {
                 const res = await fetch('/api/admin/users');
                 const users = await res.json();
-                console.log("Utilisateurs reçus :", users); // Debug dans la console F12
-
-                const container = document.getElementById('user-list');
-                container.innerHTML = "";
-
-                // FILTRAGE SOUPLE
-                const filtres = users.filter(u => {
-                    const userRole = u.role.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-                    // On garde si le rôle correspond ET que ce n'est pas l'admin
-                    return userRole.includes(roleNettoye) && u.username.toLowerCase() !== 'admin';
-                });
-
-                if (filtres.length === 0) {
-                    document.getElementById('page-title').innerText = "Aucun " + roleCible + " trouvé.";
-                } else {
-                    document.getElementById('page-title').innerText = "Qui êtes-vous ?";
-                    filtres.forEach(u => {
-                        const card = document.createElement('div');
-                        card.className = 'user-card';
-                        card.innerText = u.nom_complet;
-                        card.onclick = () => selectionnerUtilisateur(u);
-                        container.appendChild(card);
-                    });
-                }
-            } catch (e) {
-                document.getElementById('page-title').innerText = "Erreur de connexion au serveur.";
-            }
+                displayUsers(users);
+                localStorage.setItem(`cache_users_${roleCible}`, JSON.stringify(users));
+            } catch (e) { console.log("Mode hors-ligne ou erreur serveur"); }
         }
 
-        function selectionnerUtilisateur(user) {
-            selectedUser = user;
-            if(roleNettoye === 'referent') {
-                validerConnexion(); // Direct pour les référents
-            } else {
-                document.getElementById('user-list').style.display = 'none';
-                document.getElementById('page-title').style.display = 'none';
-                document.getElementById('auth-section').style.display = 'block';
-                document.getElementById('selected-user-name').innerText = user.nom_complet;
-            }
-        }
-
-        function pressNum(num) {
-            if(num === 'del') currentPin = currentPin.slice(0, -1);
-            else if(currentPin.length < 4) currentPin += num;
-            document.getElementById('pin-view').innerText = currentPin.split('').map(() => '*').join('') || "****";
-        }
-
-        function annuler() {
-            selectedUser = null;
-            currentPin = "";
-            document.getElementById('pin-view').innerText = "****";
-            document.getElementById('user-list').style.display = 'grid';
-            document.getElementById('page-title').style.display = 'block';
-            document.getElementById('auth-section').style.display = 'none';
+        function pressNum(n) {
+            if(n === 'del') currentPin = currentPin.slice(0, -1);
+            else if(currentPin.length < 4) currentPin += n;
+            document.getElementById('pin-view').innerText = "•".repeat(currentPin.length) || "••••";
         }
 
         async function validerConnexion() {
-            const url = (roleNettoye === 'referent') ? '/api/login_sans_pin' : '/login_gmao';
-            const payload = { username: selectedUser.username };
-            if(roleNettoye !== 'referent') payload.password = currentPin;
-
+            const url = (roleCible === 'referent') ? '/api/login_sans_pin' : '/login_gmao';
             const res = await fetch(url, {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify(payload)
+                body: JSON.stringify({ username: selectedUser.username, password: currentPin })
             });
-
             const data = await res.json();
             if(data.status === "success") {
                 localStorage.setItem('user_id', data.id);
                 localStorage.setItem('user_nom', data.nom);
-                window.location.href = (roleNettoye === 'referent') ? '/page_referent' : '/page_technicien';
+                window.location.href = (roleCible === 'referent') ? '/page_referent' : '/page_technicien';
             } else {
-                alert("Erreur ou Code PIN incorrect");
-                currentPin = "";
-                document.getElementById('pin-view').innerText = "****";
+                alert("Code PIN incorrect");
+                currentPin = ""; document.getElementById('pin-view').innerText = "••••";
             }
         }
 
-        chargerUsers();
+        init();
     </script>
 </body>
 </html>
