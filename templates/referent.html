@@ -3,8 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>GMAO - Saisie Référent</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <title>GMAO - Référent</title>
     <style>
         :root {
             --bg-color: #0f172a;
@@ -20,19 +19,51 @@
             font-family: 'Segoe UI', sans-serif;
             margin: 0;
             display: flex;
-            align-items: center;
-            justify-content: center;
+            flex-direction: column;
             min-height: 100vh;
+        }
+
+        /* Barre d'onglets */
+        .tabs {
+            display: flex;
+            justify-content: center;
+            background: var(--card-bg);
+            border-bottom: 2px solid #334155;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+
+        .tab-btn {
+            padding: 20px 40px;
+            border: none;
+            background: none;
+            color: #64748b;
+            font-weight: bold;
+            font-size: 1rem;
+            cursor: pointer;
+            text-transform: uppercase;
+            border-bottom: 4px solid transparent;
+            transition: 0.3s;
+        }
+
+        .tab-btn.active {
+            color: var(--accent);
+            border-bottom-color: var(--accent);
         }
 
         .container {
             width: 95%;
-            max-width: 1000px; /* Plus large pour le mode paysage */
+            max-width: 1000px;
+            margin: 20px auto;
             background: var(--card-bg);
             padding: 25px 40px;
             border-radius: 24px;
             box-shadow: 0 20px 50px rgba(0,0,0,0.4);
+            display: none; /* Masqué par défaut */
         }
+
+        .container.active { display: block; }
 
         header {
             display: flex;
@@ -46,79 +77,61 @@
         h2 { color: var(--accent); margin: 0; text-transform: uppercase; font-size: 1.4rem; }
         .user-tag { background: #334155; padding: 5px 15px; border-radius: 20px; font-size: 0.9rem; }
 
-        /* Grille en deux colonnes pour tablette paysage */
-        .form-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 30px;
-        }
-
+        .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 30px; }
         .form-group { margin-bottom: 15px; }
 
         label {
-            display: block;
-            margin-bottom: 8px;
-            font-weight: 600;
-            color: var(--accent);
-            font-size: 0.85rem;
-            text-transform: uppercase;
+            display: block; margin-bottom: 8px; font-weight: 600;
+            color: var(--accent); font-size: 0.85rem; text-transform: uppercase;
         }
 
         input, select, textarea {
-            width: 100%;
-            padding: 16px;
-            background: #0f172a;
-            border: 2px solid #334155;
-            border-radius: 12px;
-            color: white;
-            font-size: 1.1rem;
-            box-sizing: border-box;
+            width: 100%; padding: 16px; background: #0f172a;
+            border: 2px solid #334155; border-radius: 12px;
+            color: white; font-size: 1.1rem; box-sizing: border-box;
         }
 
         textarea { height: 110px; resize: none; }
 
-        .full-width { grid-column: span 2; }
-
         .footer-actions {
             margin-top: 30px;
             display: grid;
-            grid-template-columns: 1fr 3fr; /* Bouton retour plus petit que valider */
+            grid-template-columns: 1fr 3fr;
             gap: 20px;
-            align-items: center;
         }
 
         .btn-send {
-            background: var(--success);
-            color: white;
-            border: none;
-            padding: 22px;
-            border-radius: 16px;
-            font-size: 1.3rem;
-            font-weight: bold;
-            cursor: pointer;
-            transition: 0.2s;
-            box-shadow: 0 8px 20px rgba(16, 185, 129, 0.2);
+            background: var(--success); color: white; border: none;
+            padding: 22px; border-radius: 16px; font-size: 1.3rem;
+            font-weight: bold; cursor: pointer;
         }
 
-        .btn-send:active { transform: scale(0.98); background: #059669; }
-
-        .btn-back {
-            text-align: center;
-            color: #64748b;
-            text-decoration: none;
-            font-weight: 500;
+        /* Style Historique */
+        .history-list { display: flex; flex-direction: column; gap: 15px; }
+        .history-item {
+            background: #0f172a; padding: 20px; border-radius: 15px;
+            border-left: 5px solid #475569;
         }
+        .status-en_attente { border-left-color: #f59e0b; }
+        .status-saisi_gmao { border-left-color: var(--success); }
+        
+        .history-date { font-size: 0.8rem; color: #64748b; margin-bottom: 5px; }
+        .history-title { font-weight: bold; font-size: 1.1rem; color: var(--accent); }
 
-        /* Ajustement si jamais la tablette est remise à la verticale */
         @media (max-width: 800px) {
             .form-grid { grid-template-columns: 1fr; }
-            .full-width { grid-column: span 1; }
             .footer-actions { grid-template-columns: 1fr; }
         }
     </style>
 </head>
 <body>
-    <div class="container">
+
+    <div class="tabs">
+        <button class="tab-btn active" onclick="switchTab('saisie')">Nouvelle Saisie</button>
+        <button class="tab-btn" onclick="switchTab('historique')">Mon Historique</button>
+    </div>
+
+    <div id="tab-saisie" class="container active">
         <header>
             <h2>Nouvelle Intervention</h2>
             <div class="user-tag" id="user-display">Référent : -</div>
@@ -128,50 +141,69 @@
             <div class="col">
                 <div class="form-group">
                     <label>1. Ligne de Production</label>
-                    <select id="ligne">
-                        <option value="">-- Sélectionner --</option>
-                    </select>
+                    <select id="ligne"><option value="">-- Sélectionner --</option></select>
                 </div>
                 <div class="form-group">
                     <label>2. Numéro de Machine</label>
                     <input type="text" id="machine" placeholder="Ex: M-05">
                 </div>
                 <div class="form-group">
-                    <label>5. Temps passé</label>
+                    <label>3. Temps passé</label>
                     <select id="temps"></select>
                 </div>
             </div>
 
             <div class="col">
                 <div class="form-group">
-                    <label>3. Problème constaté</label>
-                    <textarea id="probleme" placeholder="Description du défaut..."></textarea>
+                    <label>4. Problème constaté</label>
+                    <textarea id="probleme" placeholder="Défaut..."></textarea>
                 </div>
                 <div class="form-group">
-                    <label>4. Action réalisée</label>
-                    <textarea id="action" placeholder="Dépannage effectué..."></textarea>
+                    <label>5. Action réalisée</label>
+                    <textarea id="action" placeholder="Dépannage..."></textarea>
                 </div>
             </div>
         </div>
 
         <div class="footer-actions">
-            <a href="/" class="btn-back">ANNULER</a>
-            <button class="btn-send" onclick="envoyerMaintenance()">ENVOYER À LA MAINTENANCE</button>
+            <a href="/" style="text-align:center; color:#64748b; text-decoration:none;">ANNULER</a>
+            <button class="btn-send" onclick="envoyerMaintenance()">ENVOYER MAINTENANCE</button>
         </div>
     </div>
 
-    <script>
-        document.getElementById('user-display').innerText = "Référent : " + (localStorage.getItem('user_nom') || "Utilisateur");
+    <div id="tab-historique" class="container">
+        <header>
+            <h2>Mes dernières saisies</h2>
+        </header>
+        <div id="history-container" class="history-list">
+            </div>
+    </div>
 
+    <script>
+        const myName = localStorage.getItem('user_nom');
+        const myId = localStorage.getItem('user_id');
+        document.getElementById('user-display').innerText = "Référent : " + (myName || "Utilisateur");
+
+        function switchTab(tab) {
+            document.querySelectorAll('.container').forEach(c => c.classList.remove('active'));
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            
+            if(tab === 'saisie') {
+                document.getElementById('tab-saisie').classList.add('active');
+                event.currentTarget.classList.add('active');
+            } else {
+                document.getElementById('tab-historique').classList.add('active');
+                event.currentTarget.classList.add('active');
+                chargerMonHistorique();
+            }
+        }
+
+        // --- Logique Formulaire ---
         async function chargerLignes() {
-            try {
-                const res = await fetch('/api/lignes');
-                const lignes = await res.json();
-                const sel = document.getElementById('ligne');
-                lignes.forEach(l => {
-                    sel.add(new Option(l.nom_ligne, l.nom_ligne));
-                });
-            } catch (e) { console.error("Erreur lignes:", e); }
+            const res = await fetch('/api/lignes');
+            const lignes = await res.json();
+            const sel = document.getElementById('ligne');
+            lignes.forEach(l => sel.add(new Option(l.nom_ligne, l.nom_ligne)));
         }
 
         const selectTemps = document.getElementById('temps');
@@ -183,28 +215,15 @@
         }
 
         async function envoyerMaintenance() {
-            const data = {
+            const payload = {
                 ligne: document.getElementById('ligne').value,
                 machine: document.getElementById('machine').value,
-                prob: document.getElementById('probleme').value,
-                act: document.getElementById('action').value,
-                temps: document.getElementById('temps').value,
-                nom_op: localStorage.getItem('user_nom'),
-                id_referent: localStorage.getItem('user_id')
+                nom_op: myName,
+                description: `PB: ${document.getElementById('probleme').value} | ACT: ${document.getElementById('action').value} | DURÉE: ${document.getElementById('temps').value}`,
+                id_referent: myId
             };
 
-            if(!data.ligne || !data.machine || !data.prob) {
-                alert("Erreur : Ligne, Machine et Problème sont obligatoires.");
-                return;
-            }
-
-            const payload = {
-                ligne: data.ligne,
-                machine: data.machine,
-                nom_op: data.nom_op,
-                description: `PB: ${data.prob} | ACT: ${data.act} | DURÉE: ${data.temps}`,
-                id_referent: data.id_referent
-            };
+            if(!payload.ligne || !payload.machine) { alert("Ligne et Machine obligatoires"); return; }
 
             const res = await fetch('/api/save_intervention', {
                 method: 'POST',
@@ -213,9 +232,35 @@
             });
 
             if(res.ok) {
-                alert("✅ Transmis avec succès !");
-                window.location.href = '/';
+                alert("✅ Transmis !");
+                location.reload();
             }
+        }
+
+        // --- Logique Historique ---
+        async function chargerMonHistorique() {
+            const container = document.getElementById('history-container');
+            container.innerHTML = "Chargement...";
+            
+            const res = await fetch('/api/historique_complet');
+            const data = await res.json();
+            
+            // On ne garde que les interventions de ce référent
+            const mesInters = data.filter(i => String(i.id_referent) === String(myId));
+
+            container.innerHTML = mesInters.length === 0 ? "Aucune intervention trouvée." : "";
+
+            mesInters.forEach(i => {
+                const date = new Date(i.date_saisie).toLocaleString('fr-FR', {day:'2-digit', month:'short', hour:'2-digit', minute:'2-digit'});
+                const div = document.createElement('div');
+                div.className = `history-item status-${i.statut}`;
+                div.innerHTML = `
+                    <div class="history-date">${date} - <b style="color:${i.statut === 'en_attente' ? '#f59e0b' : '#10b981'}">${i.statut.toUpperCase()}</b></div>
+                    <div class="history-title">${i.ligne_production} - Machine ${i.machine_num}</div>
+                    <div style="font-size:0.9rem; margin-top:5px;">${i.description}</div>
+                `;
+                container.appendChild(div);
+            });
         }
 
         chargerLignes();
