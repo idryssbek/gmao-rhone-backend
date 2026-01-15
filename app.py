@@ -10,6 +10,49 @@ DB_URL = os.environ.get("DATABASE_URL")
 def get_db_connection():
     return psycopg2.connect(DB_URL, cursor_factory=RealDictCursor)
 
+# --- FONCTION D'INITIALISATION AUTOMATIQUE ---
+def initialisation_automatique():
+    """Crée les tables si elles n'existent pas au démarrage du serveur"""
+    conn = None
+    try:
+        conn = get_db_connection()
+        cur = conn.cursor()
+        cur.execute("""
+            CREATE TABLE IF NOT EXISTS gmao_users (
+                id SERIAL PRIMARY KEY, 
+                username TEXT UNIQUE, 
+                password_hash TEXT, 
+                role TEXT, 
+                nom_complet TEXT
+            );
+            CREATE TABLE IF NOT EXISTS lignes_production (
+                id SERIAL PRIMARY KEY, 
+                nom_ligne TEXT UNIQUE NOT NULL
+            );
+            CREATE TABLE IF NOT EXISTS interventions (
+                id SERIAL PRIMARY KEY, 
+                date_saisie TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                ligne_production TEXT, 
+                machine_num TEXT, 
+                nom_operateur_intervenant TEXT,
+                description TEXT, 
+                id_referent INTEGER, 
+                statut TEXT DEFAULT 'en_attente', 
+                valide_par_tech TEXT
+            );
+            INSERT INTO gmao_users (username, password_hash, role, nom_complet) 
+            VALUES ('Admin','1234','admin','Admin') 
+            ON CONFLICT DO NOTHING;
+        """)
+        conn.commit()
+        cur.close()
+        print("✅ Base de données initialisée avec succès.")
+    except Exception as e:
+        print(f"❌ Erreur lors de l'initialisation : {e}")
+    finally:
+        if conn:
+            conn.close()
+
 # --- ROUTES PAGES ---
 @app.route('/')
 def home(): return render_template('index.html')
@@ -128,18 +171,10 @@ def export_csv():
 
 @app.route('/setup_db')
 def setup_db():
-    conn = get_db_connection(); cur = conn.cursor()
-    cur.execute("""
-        CREATE TABLE IF NOT EXISTS gmao_users (id SERIAL PRIMARY KEY, username TEXT UNIQUE, password_hash TEXT, role TEXT, nom_complet TEXT);
-        CREATE TABLE IF NOT EXISTS lignes_production (id SERIAL PRIMARY KEY, nom_ligne TEXT UNIQUE NOT NULL);
-        CREATE TABLE IF NOT EXISTS interventions (
-            id SERIAL PRIMARY KEY, date_saisie TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-            ligne_production TEXT, machine_num TEXT, nom_operateur_intervenant TEXT,
-            description TEXT, id_referent INTEGER, statut TEXT DEFAULT 'en_attente', valide_par_tech TEXT
-        );
-        INSERT INTO gmao_users (username, password_hash, role, nom_complet) VALUES ('Admin','1234','admin','Admin') ON CONFLICT DO NOTHING;
-    """)
-    conn.commit(); cur.close(); conn.close(); return "Base OK"
+    initialisation_automatique()
+    return "Base vérifiée et mise à jour."
 
+# --- LANCEMENT DU SERVEUR ---
 if __name__ == "__main__":
+    initialisation_automatique() # Lance la création des tables dès le démarrage
     app.run(host='0.0.0.0', port=int(os.environ.get("PORT", 10000)))
