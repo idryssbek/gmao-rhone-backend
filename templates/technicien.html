@@ -5,62 +5,77 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Technicien - GMAO</title>
     <style>
-        body { background: #0f172a; color: white; font-family: sans-serif; margin: 0; padding: 0; height: 100vh; display: flex; flex-direction: column; }
-        header { background: #1e293b; padding: 15px; display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #334155; }
-        .user-info { color: #38bdf8; font-weight: bold; }
-        .logout { color: #ef4444; text-decoration: none; font-size: 0.9rem; }
+        :root { --bg: #0f172a; --card: #1e293b; --accent: #38bdf8; --success: #22c55e; --warning: #f59e0b; }
+        body { background: var(--bg); color: white; font-family: 'Inter', sans-serif; margin: 0; padding: 0; height: 100vh; display: flex; flex-direction: column; }
+        
+        header { background: var(--card); padding: 15px 20px; display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #334155; }
+        .user-info { color: var(--accent); font-weight: bold; }
+        .logout { color: #ef4444; text-decoration: none; font-size: 0.9rem; border: 1px solid #ef4444; padding: 5px 10px; border-radius: 6px; }
 
-        .tabs { display: flex; background: #1e293b; }
-        .tab-btn { flex: 1; padding: 15px; border: none; background: none; color: #94a3b8; font-weight: bold; cursor: pointer; border-bottom: 3px solid transparent; }
-        .tab-btn.active { color: #38bdf8; border-bottom-color: #38bdf8; background: #1e293b; }
+        .tabs { display: flex; background: var(--card); box-shadow: 0 4px 6px -1px rgba(0,0,0,0.3); }
+        .tab-btn { flex: 1; padding: 18px 10px; border: none; background: none; color: #94a3b8; font-weight: bold; cursor: pointer; border-bottom: 3px solid transparent; font-size: 0.8rem; transition: 0.2s; }
+        .tab-btn.active { color: var(--accent); border-bottom-color: var(--accent); background: rgba(56, 189, 248, 0.05); }
 
-        .tab-content { flex: 1; overflow-y: auto; padding: 20px; display: none; }
+        .tab-content { flex: 1; overflow-y: auto; padding: 15px; display: none; animation: fadeIn 0.3s ease; }
         .tab-content.active { display: block; }
 
-        .form-card { background: #1e293b; padding: 20px; border-radius: 15px; max-width: 500px; margin: 0 auto; }
-        label { display: block; margin: 15px 0 5px; color: #94a3b8; font-size: 0.9rem; }
-        select, input, textarea { 
-            width: 100%; padding: 15px; border-radius: 10px; border: 2px solid #334155; 
-            background: #0f172a; color: white; font-size: 1rem; box-sizing: border-box; margin-bottom: 10px;
-        }
-        .btn-valider { width: 100%; padding: 18px; border-radius: 12px; border: none; background: #22c55e; color: white; font-weight: bold; font-size: 1.2rem; cursor: pointer; margin-top: 10px; }
+        /* Formulaire */
+        .form-card { background: var(--card); padding: 20px; border-radius: 15px; max-width: 500px; margin: 0 auto; box-shadow: 0 10px 25px rgba(0,0,0,0.2); }
+        label { display: block; margin: 12px 0 5px; color: var(--accent); font-size: 0.75rem; text-transform: uppercase; font-weight: bold; }
+        select, input, textarea { width: 100%; padding: 14px; border-radius: 10px; border: 2px solid #334155; background: #0f172a; color: white; font-size: 1rem; box-sizing: border-box; }
+        .btn-valider { width: 100%; padding: 18px; border-radius: 12px; border: none; background: var(--success); color: white; font-weight: bold; font-size: 1.1rem; cursor: pointer; margin-top: 15px; }
 
-        .inter-item { background: #1e293b; padding: 15px; border-radius: 10px; margin-bottom: 12px; border-left: 6px solid #475569; }
-        .statut-en_attente { border-left-color: #f59e0b; }
-        .statut-saisi_gmao { border-left-color: #22c55e; }
-        .item-header { display: flex; justify-content: space-between; font-size: 0.85rem; margin-bottom: 8px; }
-        .item-title { font-weight: bold; font-size: 1.1rem; margin-bottom: 5px; }
-        .item-desc { color: #cbd5e1; font-size: 0.95rem; line-height: 1.4; }
-        .badge-temps { background: #334155; padding: 3px 8px; border-radius: 5px; color: #38bdf8; font-size: 0.8rem; }
+        /* Liste Interventions */
+        .inter-item { background: var(--card); padding: 15px; border-radius: 12px; margin-bottom: 12px; border-left: 6px solid #475569; position: relative; }
+        .statut-en_attente { border-left-color: var(--warning); }
+        .statut-saisi_gmao { border-left-color: var(--success); opacity: 0.8; }
+        
+        .item-header { display: flex; justify-content: space-between; font-size: 0.8rem; margin-bottom: 5px; color: #94a3b8; }
+        .item-title { font-weight: bold; font-size: 1.1rem; color: white; }
+        .item-desc { color: #cbd5e1; font-size: 0.9rem; margin: 8px 0; background: rgba(0,0,0,0.2); padding: 8px; border-radius: 6px; }
+        
+        .btn-action-ok { background: var(--success); color: white; border: none; padding: 10px 15px; border-radius: 8px; font-weight: bold; cursor: pointer; width: 100%; margin-top: 10px; }
+        
+        .badge-ref { color: var(--accent); font-size: 0.8rem; font-weight: bold; }
+
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
     </style>
 </head>
 <body>
 
     <header>
-        <span class="user-info">Technicien: <span id="tech-nom">...</span></span>
-        <a href="/" class="logout">Déconnexion</a>
+        <span class="user-info">🛠️ <span id="tech-nom">...</span></span>
+        <a href="/" class="logout">Quitter</a>
     </header>
 
     <div class="tabs">
-        <button class="tab-btn active" onclick="switchTab('saisie')">NOUVELLE SAISIE</button>
-        <button class="tab-btn" onclick="switchTab('historique')">HISTORIQUE</button>
+        <button id="btn-tab-todo" class="tab-btn active" onclick="switchTab('todo')">À VALIDER <span id="count-todo"></span></button>
+        <button id="btn-tab-saisie" class="tab-btn" onclick="switchTab('saisie')">SAISIE DIRECTE</button>
+        <button id="btn-tab-histo" class="tab-btn" onclick="switchTab('historique')">HISTORIQUE</button>
     </div>
 
-    <div id="saisie" class="tab-content active">
+    <div id="todo" class="tab-content active">
+        <div id="liste-todo">
+            <p style="text-align:center; color:#64748b; margin-top:20px;">Recherche de demandes en attente...</p>
+        </div>
+    </div>
+
+    <div id="saisie" class="tab-content">
         <div class="form-card">
-            <label>Ligne :</label>
+            <h3 style="margin-top:0; color:var(--accent)">Nouvelle Intervention</h3>
+            <label>Ligne de production</label>
             <select id="ligne-select"><option value="">-- Sélectionner --</option></select>
 
-            <label>Machine :</label>
+            <label>Machine / Équipement</label>
             <input type="text" id="machine-input" placeholder="Ex: Presse-01">
 
-            <label>Temps d'intervention (minutes) :</label>
+            <label>Temps passé (minutes)</label>
             <input type="number" id="temps-input" placeholder="Ex: 30" inputmode="numeric">
 
-            <label>Description :</label>
-            <textarea id="desc-input" placeholder="Travaux réalisés..."></textarea>
+            <label>Travaux réalisés</label>
+            <textarea id="desc-input" placeholder="Décrivez votre intervention..."></textarea>
 
-            <button class="btn-valider" onclick="envoyerIntervention()">ENREGISTRER</button>
+            <button class="btn-valider" onclick="envoyerIntervention()">ENREGISTRER GMAO</button>
         </div>
     </div>
 
@@ -71,14 +86,17 @@
     <script>
         const techNom = localStorage.getItem('user_nom') || "Technicien";
         const techId = localStorage.getItem('user_id');
+        let memoireTodo = "";
+        let memoireHisto = "";
+
         document.getElementById('tech-nom').innerText = techNom;
 
         function switchTab(tabId) {
             document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
             document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
             document.getElementById(tabId).classList.add('active');
-            event.currentTarget.classList.add('active');
-            if(tabId === 'historique') chargerHistorique();
+            document.getElementById('btn-tab-' + tabId).classList.add('active');
+            refreshData();
         }
 
         async function chargerLignes() {
@@ -88,64 +106,95 @@
             lignes.forEach(l => select.add(new Option(l.nom_ligne, l.nom_ligne)));
         }
 
+        async function refreshData() {
+            try {
+                const res = await fetch('/api/historique_complet');
+                const data = await res.json();
+
+                // 1. FILTRE "À FAIRE" (EN ATTENTE)
+                const todoData = data.filter(i => i.statut === 'en_attente');
+                const todoHtml = todoData.length === 0 ? 
+                    "<p style='text-align:center; color:#64748b; margin-top:40px;'>☕ Aucune demande en attente.</p>" :
+                    todoData.map(i => `
+                        <div class="inter-item statut-en_attente">
+                            <div class="item-header">
+                                <span>${new Date(i.date_saisie).toLocaleString('fr-FR', {day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit'})}</span>
+                                <span class="badge-ref">Réf: ${i.nom_operateur_intervenant}</span>
+                            </div>
+                            <div class="item-title">${i.ligne_production} - ${i.machine_num}</div>
+                            <div class="item-desc">${i.description}</div>
+                            <button class="btn-action-ok" onclick="validerGmao(${i.id})">VALIDER DANS GMAO ✅</button>
+                        </div>
+                    `).join('');
+                
+                if(memoireTodo !== todoHtml) {
+                    document.getElementById('liste-todo').innerHTML = todoHtml;
+                    memoireTodo = todoHtml;
+                    document.getElementById('count-todo').innerText = todoData.length > 0 ? `(${todoData.length})` : "";
+                }
+
+                // 2. FILTRE "HISTORIQUE" (TOUT)
+                const histoHtml = data.map(i => `
+                    <div class="inter-item statut-${i.statut}">
+                        <div class="item-header">
+                            <span>${new Date(i.date_saisie).toLocaleDateString()}</span>
+                            <span style="font-weight:bold; color:${i.statut === 'en_attente'?'var(--warning)':'var(--success)'}">
+                                ${i.statut === 'en_attente' ? 'À VALIDER' : 'SAISI GMAO'}
+                            </span>
+                        </div>
+                        <div class="item-title">${i.ligne_production} - ${i.machine_num}</div>
+                        <div class="item-desc">${i.description}</div>
+                        <div style="font-size:0.75rem; color:var(--accent)">Emetteur: ${i.nom_operateur_intervenant}</div>
+                    </div>
+                `).join('');
+
+                if(memoireHisto !== histoHtml) {
+                    document.getElementById('liste-interventions').innerHTML = histoHtml;
+                    memoireHisto = histoHtml;
+                }
+
+            } catch (e) { console.error("Erreur sync"); }
+        }
+
+        async function validerGmao(id) {
+            const res = await fetch('/api/cloturer_gmao', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ id_intervention: id, id_tech: techId, statut: 'saisi_gmao' })
+            });
+            if(res.ok) refreshData();
+        }
+
         async function envoyerIntervention() {
             const ligne = document.getElementById('ligne-select').value;
             const machine = document.getElementById('machine-input').value;
             const temps = document.getElementById('temps-input').value;
             const desc = document.getElementById('desc-input').value;
 
-            if(!ligne || !machine || !desc) { alert("Veuillez remplir les champs obligatoires !"); return; }
-
-            // On ajoute le temps dans la description pour l'instant si ta base n'a pas de colonne "temps"
-            const descriptionFinale = desc + (temps ? ` (Durée: ${temps} min)` : "");
+            if(!ligne || !machine || !desc) { alert("Champs obligatoires !"); return; }
 
             const res = await fetch('/api/save_intervention', {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json'},
                 body: JSON.stringify({
                     ligne: ligne, machine: machine, nom_op: techNom,
-                    description: descriptionFinale, id_referent: techId
+                    description: `${desc} (Durée: ${temps || 0} min)`,
+                    id_referent: techId,
+                    statut: 'saisi_gmao' // Directement validé
                 })
             });
 
             if(res.ok) {
-                alert("Intervention enregistrée !");
+                alert("Enregistré !");
                 document.getElementById('machine-input').value = "";
-                document.getElementById('temps-input').value = "";
                 document.getElementById('desc-input').value = "";
-                switchTab('historique');
+                switchTab('todo');
             }
         }
 
-        async function chargerHistorique() {
-            const container = document.getElementById('liste-interventions');
-            container.innerHTML = "<p style='text-align:center'>Chargement...</p>";
-            const res = await fetch('/api/historique_complet');
-            const data = await res.json();
-            container.innerHTML = "";
-
-            data.forEach(i => {
-                const dateObj = new Date(i.date_saisie);
-                const dateStr = dateObj.toLocaleDateString('fr-FR', {day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit'});
-                
-                const item = document.createElement('div');
-                item.className = `inter-item statut-${i.statut}`;
-                item.innerHTML = `
-                    <div class="item-header">
-                        <span style="color:#94a3b8">${dateStr}</span>
-                        <span style="color:${i.statut === 'en_attente' ? '#f59e0b' : '#22c55e'}; font-weight:bold">
-                            ${i.statut === 'en_attente' ? 'À FAIRE' : 'SAISI GMAO'}
-                        </span>
-                    </div>
-                    <div class="item-title">${i.ligne_production} - Machine ${i.machine_num}</div>
-                    <div class="item-desc">${i.description}</div>
-                    <div style="margin-top:8px; font-size:0.8rem; color:#38bdf8">Par: ${i.nom_operateur_intervenant}</div>
-                `;
-                container.appendChild(item);
-            });
-        }
-
         chargerLignes();
+        refreshData();
+        setInterval(refreshData, 3000); // Live toutes les 3 secondes
     </script>
 </body>
 </html>
