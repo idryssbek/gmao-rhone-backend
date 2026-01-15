@@ -3,113 +3,105 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>GMAO - Dashboard Tech</title>
+    <title>GMAO - Espace Technicien</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
     <style>
-        .tech-box { background: #1a1f26; border: 1px solid #2d353f; border-radius: 12px; padding: 20px; margin-bottom: 20px; }
-        .grid-form { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; }
-        input, select, textarea { width: 100%; padding: 12px; background: #0d1117; border: 1px solid #333; color: white; border-radius: 8px; box-sizing: border-box; }
-        table { width: 100%; border-collapse: collapse; margin-top: 15px; }
-        th { text-align: left; color: #fb923c; padding: 12px; border-bottom: 2px solid #2d353f; font-size: 0.8rem; }
-        td { padding: 12px; border-bottom: 1px solid #2d353f; font-size: 0.85rem; }
-        .status { padding: 4px 8px; border-radius: 4px; font-size: 0.7rem; font-weight: bold; border: 1px solid; }
-        .todo { border-color: #fb923c; color: #fb923c; }
-        .done { border-color: #10b981; color: #10b981; }
-        .btn-v { background: #38bdf8; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer; font-weight: bold; }
+        .inter-card {
+            background: #1a1f26; border: 1px solid #2d353f; padding: 15px;
+            border-radius: 10px; margin-bottom: 15px; display: flex;
+            justify-content: space-between; align-items: center;
+        }
+        .inter-info { flex: 1; }
+        .status-badge { 
+            padding: 5px 10px; border-radius: 5px; font-size: 0.8rem; font-weight: bold;
+        }
+        .status-attente { background: #f59e0b; color: #000; }
+        .status-valide { background: #10b981; color: #fff; }
+        .btn-valider { 
+            background: #38bdf8; color: black; border: none; padding: 10px 15px;
+            border-radius: 6px; font-weight: bold; cursor: pointer;
+        }
     </style>
 </head>
 <body>
     <div class="main-container">
-        <header style="display:flex; justify-content: space-between; align-items: center; margin-bottom:20px;">
-            <h1 style="color: #fb923c;">Espace Technique</h1>
-            <button onclick="window.location.href='/'" class="btn-secondary">Déconnexion</button>
+        <header style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+            <div>
+                <h2 style="margin:0; color:#38bdf8;">ESPACE TECHNIQUE</h2>
+                <p id="user-display" style="color:#8b949e; margin:0;"></p>
+            </div>
+            <button onclick="window.location.href='/'">Sortir</button>
         </header>
 
-        <div class="tech-box">
-            <h3 style="margin-top:0; color:#fb923c;">🛠️ Saisie de mon intervention</h3>
-            <div class="grid-form">
-                <select id="t-ligne"><option value="Ligne A">Ligne A</option><option value="Ligne B">Ligne B</option></select>
-                <input type="text" id="t-machine" placeholder="N° Machine">
-                <select id="t-temps"></select>
-            </div>
-            <div style="margin-top:10px;">
-                <textarea id="t-prob" placeholder="Problème..." style="height:60px; margin-bottom:10px;"></textarea>
-                <textarea id="t-act" placeholder="Action réalisée..." style="height:60px;"></textarea>
-            </div>
-            <button onclick="saveTechInter()" style="width:100%; margin-top:10px; padding:15px; background:#fb923c; border:none; border-radius:8px; font-weight:bold; cursor:pointer;">ENREGISTRER</button>
-        </div>
-
-        <div class="tech-box">
-            <h3 style="margin-top:0; color:#38bdf8;">📋 Suivi des interventions</h3>
-            <div style="overflow-x:auto;">
-                <table>
-                    <thead>
-                        <tr>
-                            <th>DATE</th>
-                            <th>LIGNE</th>
-                            <th>MACHINE</th>
-                            <th>AUTEUR</th>
-                            <th>DÉTAILS</th>
-                            <th>STATUT</th>
-                            <th>ACTION</th>
-                        </tr>
-                    </thead>
-                    <tbody id="tech-table-body"></tbody>
-                </table>
-            </div>
+        <h3 style="color: #fff; border-bottom: 1px solid #333; padding-bottom: 5px;">Interventions à valider</h3>
+        <div id="liste-interventions">
+            <p style="color:#666;">Chargement des données...</p>
         </div>
     </div>
 
     <script>
-        const myName = localStorage.getItem('user_nom');
-        const myId = localStorage.getItem('user_id');
+        document.getElementById('user-display').innerText = "Technicien : " + localStorage.getItem('user_nom');
 
-        // Générer le temps
-        const tSel = document.getElementById('t-temps');
-        for (let i = 5; i <= 180; i += 5) {
-            let h = Math.floor(i / 60); let m = i % 60;
-            let lbl = h > 0 ? `${h}h${m > 0 ? m : '00'}` : `${m} min`;
-            tSel.add(new Option(lbl, lbl));
+        async function loadInterventions() {
+            try {
+                const res = await fetch('/api/historique_complet');
+                const data = await res.json();
+                const container = document.getElementById('liste-interventions');
+                container.innerHTML = "";
+
+                // On ne montre que les interventions "en attente" ou récentes
+                data.forEach(i => {
+                    const isAttente = i.statut === 'en_attente';
+                    const card = document.createElement('div');
+                    card.className = 'inter-card';
+                    
+                    card.innerHTML = `
+                        <div class="inter-info">
+                            <div style="font-weight:bold; color:#38bdf8;">${i.ligne_production} - ${i.machine_num}</div>
+                            <div style="font-size:0.9rem; margin:5px 0;">${i.description}</div>
+                            <div style="font-size:0.8rem; color:#666;">Par: ${i.nom_operateur_intervenant}</div>
+                        </div>
+                        <div>
+                            ${isAttente 
+                                ? `<button class="btn-valider" onclick="validerInter(${i.id})">VALIDER</button>`
+                                : `<span class="status-badge status-valide">SAISI GMAO</span>`
+                            }
+                        </div>
+                    `;
+                    container.appendChild(card);
+                });
+
+                if(data.length === 0) {
+                    container.innerHTML = "<p style='color:#666;'>Aucune intervention enregistrée.</p>";
+                }
+            } catch (err) {
+                console.error("Erreur:", err);
+            }
         }
 
-        async function loadTable() {
-            const res = await fetch('/api/historique_complet');
-            const data = await res.json();
-            const tbody = document.getElementById('tech-table-body');
-            tbody.innerHTML = "";
-            data.forEach(i => {
-                const isDone = i.statut === 'saisi_gmao';
-                tbody.innerHTML += `
-                    <tr>
-                        <td>${new Date(i.date_saisie).toLocaleDateString('fr-FR', {day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit'})}</td>
-                        <td>${i.ligne_production}</td>
-                        <td><b>${i.machine_num}</b></td>
-                        <td>${i.nom_complet || i.nom_operateur_intervenant}</td>
-                        <td style="font-size:0.75rem; color:#ccc;">${i.description}</td>
-                        <td><span class="status ${isDone?'done':'todo'}">${isDone?'SAISI':'GMAO'}</span></td>
-                        <td>${!isDone? `<button class="btn-v" onclick="validerGmao(${i.id})">OK</button>` : '✅'}</td>
-                    </tr>
-                `;
+        async function validerInter(idInter) {
+            const nomTech = localStorage.getItem('user_nom');
+            
+            const res = await fetch('/api/cloturer_gmao', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({
+                    id_intervention: idInter,
+                    id_tech: nomTech
+                })
             });
+
+            if(res.ok) {
+                loadInterventions(); // Rafraîchir la liste
+            } else {
+                alert("Erreur lors de la validation");
+            }
         }
 
-        async function saveTechInter() {
-            const data = {
-                ligne: document.getElementById('t-ligne').value,
-                machine: document.getElementById('t-machine').value,
-                nom_op: myName,
-                description: `PROB: ${document.getElementById('t-prob').value} | ACT: ${document.getElementById('t-act').value} | TEMPS: ${document.getElementById('t-temps').value}`,
-                id_referent: myId
-            };
-            await fetch('/api/save_intervention', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(data) });
-            loadTable();
-        }
-
-        async function validerGmao(id) {
-            await fetch('/api/cloturer_gmao', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ id_intervention: id, id_tech: myName }) });
-            loadTable();
-        }
-        loadTable();
+        // Charger au démarrage
+        loadInterventions();
+        // Rafraîchir toutes les 30 secondes automatiquement
+        setInterval(loadInterventions, 30000);
     </script>
 </body>
 </html>
