@@ -5,77 +5,23 @@
     <title>GMAO - Administration</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
     <style>
-        body { 
-            display: flex; 
-            height: 100vh; 
-            margin: 0; 
-            background: #0d1117; 
-            color: white; 
-            font-family: sans-serif;
-            overflow: hidden;
-        }
-
-        /* Barre latérale gauche (Menu) */
-        .sidebar { 
-            width: 200px; 
-            background: #161b22; 
-            border-right: 1px solid #30363d; 
-            padding: 20px;
-            display: flex;
-            flex-direction: column;
-        }
-
-        /* Zone centrale (Contenu) */
-        .main-content { 
-            flex: 1; 
-            padding: 30px; 
-            overflow-y: auto; 
-        }
-
-        /* Barre latérale droite (Console Debug) */
-        .debug-sidebar { 
-            width: 300px; 
-            background: #000; 
-            border-left: 1px solid #38bdf8; 
-            display: flex; 
-            flex-direction: column;
-        }
-
-        .debug-title {
-            background: #1a1f26;
-            color: #38bdf8;
-            padding: 10px;
-            font-weight: bold;
-            font-size: 0.8rem;
-            border-bottom: 1px solid #38bdf8;
-        }
-
-        #debug-console {
-            flex: 1;
-            padding: 15px;
-            font-family: 'Courier New', monospace;
-            font-size: 12px;
-            overflow-y: auto;
-            color: #0f0;
-            line-height: 1.4;
-        }
-
-        /* Styles Éléments */
-        .nav-item { 
-            padding: 12px; 
-            cursor: pointer; 
-            border-radius: 6px; 
-            margin-bottom: 5px; 
-            color: #8b949e; 
-        }
+        body { display: flex; height: 100vh; margin: 0; background: #0d1117; color: white; font-family: sans-serif; overflow: hidden; }
+        .sidebar { width: 200px; background: #161b22; border-right: 1px solid #30363d; padding: 20px; display: flex; flex-direction: column; }
+        .main-content { flex: 1; padding: 30px; overflow-y: auto; }
+        .debug-sidebar { width: 300px; background: #000; border-left: 1px solid #38bdf8; display: flex; flex-direction: column; }
+        .debug-title { background: #1a1f26; color: #38bdf8; padding: 10px; font-weight: bold; font-size: 0.8rem; border-bottom: 1px solid #38bdf8; }
+        #debug-console { flex: 1; padding: 15px; font-family: 'Courier New', monospace; font-size: 12px; overflow-y: auto; color: #0f0; line-height: 1.4; }
+        .nav-item { padding: 12px; cursor: pointer; border-radius: 6px; margin-bottom: 5px; color: #8b949e; }
         .nav-item.active { background: #1f6feb; color: white; }
         .tab-content { display: none; }
         .tab-content.active { display: block; }
-        
         .card { background: #161b22; border: 1px solid #30363d; padding: 20px; border-radius: 8px; margin-bottom: 20px; }
         input, select { background: #0d1117; border: 1px solid #30363d; color: white; padding: 10px; border-radius: 6px; margin-bottom: 10px; width: 100%; box-sizing: border-box; }
         button { background: #238636; color: white; border: none; padding: 10px; border-radius: 6px; cursor: pointer; width: 100%; font-weight: bold; }
-        button.btn-del { background: #da3633; width: auto; padding: 5px 10px; }
+        button.btn-del { background: #da3633; width: auto; padding: 5px 10px; font-size: 0.7rem; }
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+        th { text-align: left; color: #38bdf8; font-size: 0.8rem; padding: 10px; border-bottom: 1px solid #30363d; }
+        td { padding: 10px; border-bottom: 1px solid #222; font-size: 0.9rem; }
     </style>
 </head>
 <body>
@@ -85,6 +31,7 @@
         <div class="nav-item active" onclick="showTab('lignes', this)">🏭 Lignes</div>
         <div class="nav-item" onclick="showTab('equipe', this)">👥 Équipe</div>
         <div class="nav-item" onclick="showTab('inter', this)">📋 Interventions</div>
+        <button onclick="window.location.href='/api/export_csv'" style="margin-top:20px; background:#f59e0b;">📥 Export CSV</button>
         <button onclick="window.location.href='/'" style="margin-top:auto; background:#30363d;">Quitter</button>
     </div>
 
@@ -93,20 +40,16 @@
         <div id="tab-lignes" class="tab-content active">
             <h2>Gestion des Lignes</h2>
             <div class="card">
-                <label>Nom de la nouvelle ligne :</label>
-                <input type="text" id="l-nom" placeholder="Ex: Presse 05, Ligne Montage...">
+                <input type="text" id="l-nom" placeholder="Nom de la nouvelle ligne...">
                 <button onclick="addLigne()">CRÉER LA LIGNE</button>
             </div>
-            <div class="card">
-                <h3>Lignes actives</h3>
-                <div id="list-lignes"></div>
-            </div>
+            <div class="card"><div id="list-lignes"></div></div>
         </div>
 
         <div id="tab-equipe" class="tab-content">
             <h2>Gestion d'Équipe</h2>
             <div class="card">
-                <input type="text" id="u-nom" placeholder="Nom">
+                <input type="text" id="u-nom" placeholder="Nom Complet">
                 <input type="text" id="u-pin" placeholder="Code PIN">
                 <select id="u-role">
                     <option value="referent">Référent</option>
@@ -114,96 +57,117 @@
                 </select>
                 <button onclick="addUser()">AJOUTER MEMBRE</button>
             </div>
-            <div id="list-users"></div>
+            <div class="card"><div id="list-users"></div></div>
         </div>
 
         <div id="tab-inter" class="tab-content">
-            <h2>Historique</h2>
-            <div id="list-inter"></div>
+            <h2>Historique Interventions</h2>
+            <div class="card">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Ligne</th>
+                            <th>Machine</th>
+                            <th>Détails</th>
+                            <th>Statut</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody id="table-inter"></tbody>
+                </table>
+            </div>
         </div>
-
     </div>
 
     <div class="debug-sidebar">
         <div class="debug-title">CONSOLE DE DEBUG SYSTEME</div>
-        <div id="debug-console">
-            <div>>> Attente d'actions...</div>
-        </div>
+        <div id="debug-console"><div>>> Session admin ouverte.</div></div>
     </div>
 
     <script>
-        // LOGS DANS LA CONSOLE DE DROITE
         function log(msg, isError = false) {
             const consoleDiv = document.getElementById('debug-console');
-            const time = new Date().toLocaleTimeString();
             const color = isError ? '#ff4444' : '#00ff00';
-            consoleDiv.innerHTML += `<div style="color:${color}">[${time}] ${msg}</div>`;
+            consoleDiv.innerHTML += `<div style="color:${color}">[${new Date().toLocaleTimeString()}] ${msg}</div>`;
             consoleDiv.scrollTop = consoleDiv.scrollHeight;
         }
 
-        // NAVIGATION
         function showTab(tabId, el) {
             document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
             document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
             document.getElementById('tab-' + tabId).classList.add('active');
             el.classList.add('active');
-            log("Navigation vers : " + tabId);
+            if(tabId === 'inter') loadInter();
+            if(tabId === 'equipe') loadUsers();
         }
 
-        // GESTION DES LIGNES
+        // --- GESTION LIGNES ---
         async function loadLignes() {
-            log("Chargement des lignes...");
-            try {
-                const res = await fetch('/api/lignes');
-                const data = await res.json();
-                const container = document.getElementById('list-lignes');
-                container.innerHTML = "";
-                data.forEach(l => {
-                    container.innerHTML += `
-                        <div style="display:flex; justify-content:space-between; padding:10px; border-bottom:1px solid #333;">
-                            <span>${l.nom_ligne}</span>
-                            <button class="btn-del" onclick="deleteLigne(${l.id})">Supprimer</button>
-                        </div>`;
-                });
-                log(data.length + " lignes récupérées avec succès.");
-            } catch (e) {
-                log("ERREUR CHARGEMENT LIGNES : " + e.message, true);
-            }
+            const res = await fetch('/api/lignes');
+            const data = await res.json();
+            const container = document.getElementById('list-lignes');
+            container.innerHTML = data.map(l => `
+                <div style="display:flex; justify-content:space-between; padding:8px; border-bottom:1px solid #333;">
+                    <span>${l.nom_ligne}</span>
+                    <button class="btn-del" onclick="deleteLigne(${l.id})">Supprimer</button>
+                </div>`).join('');
+            log(data.length + " lignes chargées.");
         }
 
         async function addLigne() {
             const nom = document.getElementById('l-nom').value;
-            if(!nom) return log("Erreur : le nom est vide", true);
+            if(!nom) return;
+            await fetch('/api/lignes', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ nom }) });
+            document.getElementById('l-nom').value = ""; loadLignes();
+        }
 
-            log("Tentative d'ajout de la ligne : " + nom);
+        async function deleteLigne(id) { await fetch(`/api/lignes/${id}`, { method: 'DELETE' }); loadLignes(); }
+
+        // --- GESTION EQUIPE ---
+        async function loadUsers() {
+            const res = await fetch('/api/admin/users');
+            const data = await res.json();
+            const container = document.getElementById('list-users');
+            container.innerHTML = `<table><tr><th>Nom</th><th>Rôle</th><th>PIN</th><th>Action</th></tr>
+                ${data.map(u => `<tr><td>${u.nom_complet}</td><td>${u.role}</td><td>${u.password_hash}</td>
+                <td><button class="btn-del" onclick="deleteUser(${u.id})">X</button></td></tr>`).join('')}</table>`;
+        }
+
+        async function addUser() {
+            const d = { nom: document.getElementById('u-nom').value, username: document.getElementById('u-nom').value, password: document.getElementById('u-pin').value, role: document.getElementById('u-role').value };
+            await fetch('/api/admin/users', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(d) });
+            loadUsers();
+        }
+
+        async function deleteUser(id) { await fetch(`/api/admin/users/${id}`, { method: 'DELETE' }); loadUsers(); }
+
+        // --- GESTION INTERVENTIONS (HISTORIQUE) ---
+        async function loadInter() {
+            log("Chargement de l'historique...");
             try {
-                const res = await fetch('/api/lignes', {
-                    method: 'POST',
-                    headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({ nom: nom })
+                const res = await fetch('/api/historique_complet');
+                const data = await res.json();
+                const tb = document.getElementById('table-inter');
+                tb.innerHTML = "";
+                data.forEach(i => {
+                    const dateFmt = new Date(i.date_saisie).toLocaleString('fr-FR', {day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit'});
+                    tb.innerHTML += `<tr>
+                        <td>${dateFmt}</td>
+                        <td><b>${i.ligne_production}</b></td>
+                        <td>${i.machine_num}</td>
+                        <td style="font-size:0.8rem; color:#aaa;">${i.description || ''}</td>
+                        <td><span style="color:${i.statut === 'en_attente' ? '#f59e0b':'#10b981'}">${i.statut === 'en_attente' ? '⏳':'✅'}</span></td>
+                        <td><button class="btn-del" onclick="delInter(${i.id})">DEL</button></td>
+                    </tr>`;
                 });
-                if(res.ok) {
-                    log("Succès : Ligne créée.");
-                    document.getElementById('l-nom').value = "";
-                    loadLignes();
-                } else {
-                    log("Erreur serveur lors de la création", true);
-                }
-            } catch (e) {
-                log("ERREUR RESEAU : " + e.message, true);
-            }
+                log(data.length + " interventions trouvées.");
+            } catch (e) { log("Erreur historique", true); }
         }
 
-        async function deleteLigne(id) {
-            log("Suppression ligne ID: " + id);
-            await fetch(`/api/lignes/${id}`, { method: 'DELETE' });
-            loadLignes();
-        }
+        async function delInter(id) { if(confirm("Supprimer ?")) { await fetch(`/api/admin/delete_inter/${id}`, {method:'DELETE'}); loadInter(); } }
 
-        // Initialisation
-        window.onload = () => {
-            loadLignes();
-        };
+        window.onload = () => { loadLignes(); loadUsers(); loadInter(); };
     </script>
 </body>
 </html>
