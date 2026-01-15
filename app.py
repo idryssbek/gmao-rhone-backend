@@ -44,7 +44,7 @@ def manage_lignes():
     if request.method == 'POST':
         cur.execute("INSERT INTO lignes_production (nom_ligne) VALUES (%s) ON CONFLICT DO NOTHING", (request.json['nom'],))
         conn.commit()
-    cur.execute("SELECT * FROM lignes_production ORDER BY nom_ligne")
+    cur.execute("SELECT * FROM lignes_production ORDER BY nom_ligne ASC")
     lignes = cur.fetchall(); cur.close(); conn.close()
     return jsonify(lignes)
 
@@ -60,17 +60,12 @@ def delete_ligne(id):
 def save_intervention():
     data = request.json
     conn = get_db_connection(); cur = conn.cursor()
-    try:
-        cur.execute("""
-            INSERT INTO interventions (ligne_production, machine_num, nom_operateur_intervenant, description, id_referent, statut)
-            VALUES (%s, %s, %s, %s, %s, 'en_attente')
-        """, (data['ligne'], data['machine'], data['nom_op'], data['description'], data['id_referent']))
-        conn.commit()
-        return jsonify({"status": "success"})
-    except Exception as e:
-        return jsonify({"status": "error", "message": str(e)}), 500
-    finally:
-        cur.close(); conn.close()
+    cur.execute("""
+        INSERT INTO interventions (ligne_production, machine_num, nom_operateur_intervenant, description, id_referent, statut)
+        VALUES (%s, %s, %s, %s, %s, 'en_attente')
+    """, (data['ligne'], data['machine'], data['nom_op'], data['description'], data['id_referent']))
+    conn.commit(); cur.close(); conn.close()
+    return jsonify({"status": "success"})
 
 @app.route('/api/historique_complet')
 def get_historique_complet():
@@ -119,17 +114,17 @@ def delete_user(id):
     conn.commit(); cur.close(); conn.close()
     return jsonify({"status": "success"})
 
-# --- SETUP & EXPORT ---
 @app.route('/api/export_csv')
 def export_csv():
     conn = get_db_connection(); cur = conn.cursor()
-    cur.execute("SELECT * FROM interventions ORDER BY date_saisie DESC")
+    cur.execute("SELECT i.*, u.nom_complet as referent FROM interventions i LEFT JOIN gmao_users u ON i.id_referent = u.id")
     rows = cur.fetchall()
     output = io.StringIO()
     writer = csv.writer(output)
-    writer.writerow(['Date', 'Ligne', 'Machine', 'Auteur', 'Description', 'Statut'])
-    for r in rows: writer.writerow([r['date_saisie'], r['ligne_production'], r['machine_num'], r['nom_operateur_intervenant'], r['description'], r['statut']])
-    return Response(output.getvalue(), mimetype="text/csv", headers={"Content-disposition":"attachment; filename=gmao.csv"})
+    writer.writerow(['Date', 'Ligne', 'Machine', 'Referent', 'Desc', 'Statut', 'Validé par'])
+    for r in rows:
+        writer.writerow([r['date_saisie'], r['ligne_production'], r['machine_num'], r['referent'], r['description'], r['statut'], r['valide_par_tech']])
+    return Response(output.getvalue(), mimetype="text/csv", headers={"Content-disposition":"attachment; filename=export.csv"})
 
 @app.route('/setup_db')
 def setup_db():
@@ -144,7 +139,7 @@ def setup_db():
         );
         INSERT INTO gmao_users (username, password_hash, role, nom_complet) VALUES ('Admin','1234','admin','Admin') ON CONFLICT DO NOTHING;
     """)
-    conn.commit(); cur.close(); conn.close(); return "OK"
+    conn.commit(); cur.close(); conn.close(); return "Base OK"
 
 if __name__ == "__main__":
     app.run(host='0.0.0.0', port=int(os.environ.get("PORT", 10000)))
