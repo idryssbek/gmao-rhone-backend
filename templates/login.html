@@ -4,16 +4,21 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>GMAO - Connexion</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
     <style>
-        body { background: #0f172a; color: white; font-family: sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
-        .login-card { background: #1e293b; padding: 40px; border-radius: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.5); width: 100%; max-width: 400px; text-align: center; }
-        h2 { color: #38bdf8; text-transform: uppercase; margin-bottom: 30px; }
-        select, input { width: 100%; padding: 15px; margin-bottom: 20px; border-radius: 10px; border: 2px solid #334155; background: #0f172a; color: white; font-size: 1rem; box-sizing: border-box; }
-        button { width: 100%; padding: 15px; border-radius: 10px; border: none; background: #38bdf8; color: white; font-weight: bold; font-size: 1.1rem; cursor: pointer; }
+        body { background: #0f172a; color: white; font-family: sans-serif; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; }
+        .login-card { background: #1e293b; padding: 30px; border-radius: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.5); width: 100%; max-width: 350px; text-align: center; }
+        h2 { color: #38bdf8; text-transform: uppercase; margin-bottom: 20px; font-size: 1.2rem; }
+        select, .pin-display { width: 100%; padding: 15px; margin-bottom: 20px; border-radius: 10px; border: 2px solid #334155; background: #0f172a; color: white; font-size: 1.2rem; text-align: center; box-sizing: border-box; }
+        
+        /* Style du Pavé Numérique */
+        .numpad { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 20px; }
+        .num-btn { background: #334155; color: white; border: none; padding: 20px; border-radius: 10px; font-size: 1.5rem; font-weight: bold; cursor: pointer; transition: 0.2s; }
+        .num-btn:active { background: #38bdf8; transform: scale(0.95); }
+        .num-btn.del { background: #ef4444; }
+        
+        button.btn-login { width: 100%; padding: 15px; border-radius: 10px; border: none; background: #22c55e; color: white; font-weight: bold; font-size: 1.1rem; cursor: pointer; }
         .back-link { display: block; margin-top: 20px; color: #64748b; text-decoration: none; font-size: 0.9rem; }
-        label { display: block; text-align: left; margin-bottom: 8px; color: #94a3b8; }
-        #pin-container { display: block; }
+        label { display: block; text-align: left; margin-bottom: 8px; color: #94a3b8; font-size: 0.9rem; }
     </style>
 </head>
 <body>
@@ -26,12 +31,27 @@
             <option value="">Chargement...</option>
         </select>
 
-        <div id="pin-container">
+        <div id="tech-section" style="display: none;">
             <label>Code PIN :</label>
-            <input type="password" id="pin-input" placeholder="****" inputmode="numeric">
+            <div class="pin-display" id="pin-view">****</div>
+            
+            <div class="numpad">
+                <button class="num-btn" onclick="pressNum('1')">1</button>
+                <button class="num-btn" onclick="pressNum('2')">2</button>
+                <button class="num-btn" onclick="pressNum('3')">3</button>
+                <button class="num-btn" onclick="pressNum('4')">4</button>
+                <button class="num-btn" onclick="pressNum('5')">5</button>
+                <button class="num-btn" onclick="pressNum('6')">6</button>
+                <button class="num-btn" onclick="pressNum('7')">7</button>
+                <button class="num-btn" onclick="pressNum('8')">8</button>
+                <button class="num-btn" onclick="pressNum('9')">9</button>
+                <button class="num-btn del" onclick="pressNum('del')">⌫</button>
+                <button class="num-btn" onclick="pressNum('0')">0</button>
+                <button class="num-btn" style="background:#38bdf8" onclick="tenterConnexion()">OK</button>
+            </div>
         </div>
 
-        <button onclick="tenterConnexion()">SE CONNECTER</button>
+        <button id="btn-ref" class="btn-login" style="display:none;" onclick="tenterConnexion()">ENTRER</button>
         
         <a href="/" class="back-link">← Retour au menu</a>
     </div>
@@ -39,48 +59,50 @@
     <script>
         const params = new URLSearchParams(window.location.search);
         const roleCible = params.get('role') || 'technicien';
+        let currentPin = "";
 
-        // Configuration visuelle au démarrage
+        // Initialisation de l'affichage selon le rôle
         if(roleCible === 'referent') {
-            document.getElementById('pin-container').style.display = 'none';
             document.getElementById('role-title').innerText = "Espace Référent";
+            document.getElementById('btn-ref').style.display = 'block';
+            document.getElementById('tech-section').style.display = 'none';
         } else {
             document.getElementById('role-title').innerText = "Espace Technicien";
+            document.getElementById('tech-section').style.display = 'block';
+            document.getElementById('btn-ref').style.display = 'none';
+        }
+
+        // Gestion du pavé numérique
+        function pressNum(num) {
+            if(num === 'del') {
+                currentPin = currentPin.slice(0, -1);
+            } else {
+                if(currentPin.length < 4) currentPin += num;
+            }
+            // Affiche des astérisques pour masquer le code
+            document.getElementById('pin-view').innerText = currentPin.split('').map(() => '*').join('') || "****";
         }
 
         async function chargerUsers() {
-            try {
-                const res = await fetch('/api/admin/users');
-                const users = await res.json();
-                const select = document.getElementById('nom-select');
-                select.innerHTML = '<option value="">-- Choisis ton nom --</option>';
+            const res = await fetch('/api/admin/users');
+            const users = await res.json();
+            const select = document.getElementById('nom-select');
+            select.innerHTML = '<option value="">-- Choisis ton nom --</option>';
 
-                // FILTRAGE : On garde le rôle correspondant ET on exclut l'admin
-                const filtres = users.filter(u => 
-                    u.role.toLowerCase() === roleCible.toLowerCase() && 
-                    u.username.toLowerCase() !== 'admin'
-                );
+            // Filtrage : Rôle correspondant + pas d'admin
+            const filtres = users.filter(u => 
+                u.role.toLowerCase() === roleCible.toLowerCase() && 
+                u.username.toLowerCase() !== 'admin'
+            );
 
-                if(filtres.length === 0) {
-                    select.innerHTML = '<option value="">Aucun utilisateur trouvé</option>';
-                }
-
-                filtres.forEach(u => {
-                    select.add(new Option(u.nom_complet, u.username));
-                });
-            } catch (e) { console.error("Erreur:", e); }
+            filtres.forEach(u => select.add(new Option(u.nom_complet, u.username)));
         }
 
         async function tenterConnexion() {
             const user = document.getElementById('nom-select').value;
-            const pin = document.getElementById('pin-input').value;
+            if(!user) { alert("Sélectionne ton nom"); return; }
 
-            if(!user) {
-                alert("Sélectionne ton nom");
-                return;
-            }
-
-            // --- LOGIQUE RÉFÉRENT (SANS PIN) ---
+            // LOGIQUE RÉFÉRENT
             if(roleCible === 'referent') {
                 const res = await fetch('/api/login_sans_pin', {
                     method: 'POST',
@@ -96,11 +118,11 @@
                 return;
             }
 
-            // --- LOGIQUE TECHNICIEN (AVEC PIN) ---
+            // LOGIQUE TECHNICIEN (AVEC PIN DU PAVÉ)
             const res = await fetch('/login_gmao', {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({ username: user, password: pin })
+                body: JSON.stringify({ username: user, password: currentPin })
             });
             
             const data = await res.json();
@@ -110,6 +132,8 @@
                 window.location.href = '/page_technicien';
             } else {
                 alert("Code PIN incorrect !");
+                currentPin = "";
+                document.getElementById('pin-view').innerText = "****";
             }
         }
 
