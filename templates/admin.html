@@ -19,6 +19,11 @@
         input, select { background: #0d1117; border: 1px solid #30363d; color: white; padding: 10px; border-radius: 6px; margin-bottom: 10px; width: 100%; box-sizing: border-box; }
         button { background: #238636; color: white; border: none; padding: 10px; border-radius: 6px; cursor: pointer; width: 100%; font-weight: bold; }
         button.btn-del { background: #da3633; width: auto; padding: 5px 10px; font-size: 0.7rem; }
+        /* Style spécifique pour les boutons de statut */
+        .btn-status { width: auto; padding: 5px 10px; font-size: 0.7rem; margin-right: 5px; }
+        .btn-valider { background: #10b981; }
+        .btn-reset { background: #f59e0b; color: black; }
+        
         table { width: 100%; border-collapse: collapse; margin-top: 10px; }
         th { text-align: left; color: #38bdf8; font-size: 0.8rem; padding: 10px; border-bottom: 1px solid #30363d; }
         td { padding: 10px; border-bottom: 1px solid #222; font-size: 0.9rem; }
@@ -71,7 +76,7 @@
                             <th>Machine</th>
                             <th>Détails</th>
                             <th>Statut</th>
-                            <th>Action</th>
+                            <th>Actions</th>
                         </tr>
                     </thead>
                     <tbody id="table-inter"></tbody>
@@ -100,6 +105,7 @@
             el.classList.add('active');
             if(tabId === 'inter') loadInter();
             if(tabId === 'equipe') loadUsers();
+            log("Navigation vers : " + tabId);
         }
 
         // --- GESTION LIGNES ---
@@ -152,20 +158,53 @@
                 tb.innerHTML = "";
                 data.forEach(i => {
                     const dateFmt = new Date(i.date_saisie).toLocaleString('fr-FR', {day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit'});
+                    
+                    // Bouton de changement de statut dynamique
+                    const isAttente = i.statut === 'en_attente';
+                    const btnStatut = isAttente 
+                        ? `<button class="btn-status btn-valider" onclick="changeStatut(${i.id}, 'saisi_gmao')">VALIDER</button>`
+                        : `<button class="btn-status btn-reset" onclick="changeStatut(${i.id}, 'en_attente')">RESET</button>`;
+
                     tb.innerHTML += `<tr>
                         <td>${dateFmt}</td>
                         <td><b>${i.ligne_production}</b></td>
                         <td>${i.machine_num}</td>
                         <td style="font-size:0.8rem; color:#aaa;">${i.description || ''}</td>
-                        <td><span style="color:${i.statut === 'en_attente' ? '#f59e0b':'#10b981'}">${i.statut === 'en_attente' ? '⏳':'✅'}</span></td>
-                        <td><button class="btn-del" onclick="delInter(${i.id})">DEL</button></td>
+                        <td><span style="color:${isAttente ? '#f59e0b':'#10b981'}">${isAttente ? '⏳':'✅'}</span></td>
+                        <td>
+                            <div style="display:flex;">
+                                ${btnStatut}
+                                <button class="btn-del" onclick="delInter(${i.id})">DEL</button>
+                            </div>
+                        </td>
                     </tr>`;
                 });
                 log(data.length + " interventions trouvées.");
             } catch (e) { log("Erreur historique", true); }
         }
 
-        async function delInter(id) { if(confirm("Supprimer ?")) { await fetch(`/api/admin/delete_inter/${id}`, {method:'DELETE'}); loadInter(); } }
+        // Nouvelle fonction pour changer le statut
+        async function changeStatut(id, newStatut) {
+            log("Modification statut ID " + id + " -> " + newStatut);
+            try {
+                // On réutilise la route existante ou une route admin
+                const res = await fetch('/api/cloturer_gmao', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({
+                        id_intervention: id,
+                        id_tech: "ADMIN",
+                        statut: newStatut // On envoie le nouveau statut souhaité
+                    })
+                });
+                if(res.ok) {
+                    log("Statut mis à jour avec succès");
+                    loadInter();
+                }
+            } catch (e) { log("Erreur lors du changement de statut", true); }
+        }
+
+        async function delInter(id) { if(confirm("Supprimer définitivement cette intervention ?")) { await fetch(`/api/admin/delete_inter/${id}`, {method:'DELETE'}); loadInter(); } }
 
         window.onload = () => { loadLignes(); loadUsers(); loadInter(); };
     </script>
