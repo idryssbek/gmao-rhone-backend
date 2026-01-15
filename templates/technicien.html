@@ -3,105 +3,151 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>GMAO - Espace Technicien</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <title>Technicien - GMAO</title>
     <style>
-        .inter-card {
-            background: #1a1f26; border: 1px solid #2d353f; padding: 15px;
-            border-radius: 10px; margin-bottom: 15px; display: flex;
-            justify-content: space-between; align-items: center;
+        body { background: #0f172a; color: white; font-family: sans-serif; margin: 0; padding: 0; height: 100vh; display: flex; flex-direction: column; }
+        
+        /* Menu du haut */
+        header { background: #1e293b; padding: 15px; display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #334155; }
+        .user-info { color: #38bdf8; font-weight: bold; }
+        .logout { color: #ef4444; text-decoration: none; font-size: 0.9rem; }
+
+        /* Système d'onglets */
+        .tabs { display: flex; background: #1e293b; }
+        .tab-btn { flex: 1; padding: 15px; border: none; background: none; color: #94a3b8; font-weight: bold; cursor: pointer; border-bottom: 3px solid transparent; }
+        .tab-btn.active { color: #38bdf8; border-bottom-color: #38bdf8; background: #1e293b; }
+
+        /* Contenu des onglets */
+        .tab-content { flex: 1; overflow-y: auto; padding: 20px; display: none; }
+        .tab-content.active { display: block; }
+
+        /* Style Formulaire */
+        .form-card { background: #1e293b; padding: 20px; border-radius: 15px; max-width: 500px; margin: 0 auto; }
+        label { display: block; margin: 15px 0 5px; color: #94a3b8; }
+        select, input, textarea { 
+            width: 100%; padding: 15px; border-radius: 10px; border: 2px solid #334155; 
+            background: #0f172a; color: white; font-size: 1rem; box-sizing: border-box; margin-bottom: 10px;
         }
-        .inter-info { flex: 1; }
-        .status-badge { 
-            padding: 5px 10px; border-radius: 5px; font-size: 0.8rem; font-weight: bold;
-        }
-        .status-attente { background: #f59e0b; color: #000; }
-        .status-valide { background: #10b981; color: #fff; }
-        .btn-valider { 
-            background: #38bdf8; color: black; border: none; padding: 10px 15px;
-            border-radius: 6px; font-weight: bold; cursor: pointer;
-        }
+        .btn-valider { width: 100%; padding: 18px; border-radius: 12px; border: none; background: #22c55e; color: white; font-weight: bold; font-size: 1.2rem; cursor: pointer; margin-top: 10px; }
+
+        /* Style Liste Historique */
+        .inter-item { background: #1e293b; padding: 15px; border-radius: 10px; margin-bottom: 12px; border-left: 6px solid #475569; }
+        .statut-en_attente { border-left-color: #f59e0b; } /* Orange */
+        .statut-saisi_gmao { border-left-color: #22c55e; } /* Vert */
+        .item-header { display: flex; justify-content: space-between; font-size: 0.85rem; margin-bottom: 8px; }
+        .item-title { font-weight: bold; font-size: 1.1rem; margin-bottom: 5px; }
+        .item-desc { color: #cbd5e1; font-size: 0.95rem; line-height: 1.4; }
     </style>
 </head>
 <body>
-    <div class="main-container">
-        <header style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-            <div>
-                <h2 style="margin:0; color:#38bdf8;">ESPACE TECHNIQUE</h2>
-                <p id="user-display" style="color:#8b949e; margin:0;"></p>
-            </div>
-            <button onclick="window.location.href='/'">Sortir</button>
-        </header>
 
-        <h3 style="color: #fff; border-bottom: 1px solid #333; padding-bottom: 5px;">Interventions à valider</h3>
-        <div id="liste-interventions">
-            <p style="color:#666;">Chargement des données...</p>
+    <header>
+        <span class="user-info">ID: <span id="tech-nom">...</span></span>
+        <a href="/" class="logout">Quitter</a>
+    </header>
+
+    <div class="tabs">
+        <button class="tab-btn active" onclick="switchTab('saisie')">NOUVELLE SAISIE</button>
+        <button class="tab-btn" onclick="switchTab('historique')">HISTORIQUE COMPLET</button>
+    </div>
+
+    <div id="saisie" class="tab-content active">
+        <div class="form-card">
+            <label>Ligne de production :</label>
+            <select id="ligne-select"><option value="">-- Sélectionner --</option></select>
+
+            <label>Numéro de Machine :</label>
+            <input type="text" id="machine-input" placeholder="Ex: M-102">
+
+            <label>Description de l'intervention :</label>
+            <textarea id="desc-input" placeholder="Détails de la panne..."></textarea>
+
+            <button class="btn-valider" onclick="envoyerIntervention()">VALIDER</button>
         </div>
     </div>
 
+    <div id="historique" class="tab-content">
+        <div id="liste-interventions">
+            </div>
+    </div>
+
     <script>
-        document.getElementById('user-display').innerText = "Technicien : " + localStorage.getItem('user_nom');
+        const techNom = localStorage.getItem('user_nom') || "Technicien";
+        const techId = localStorage.getItem('user_id');
+        document.getElementById('tech-nom').innerText = techNom;
 
-        async function loadInterventions() {
-            try {
-                const res = await fetch('/api/historique_complet');
-                const data = await res.json();
-                const container = document.getElementById('liste-interventions');
-                container.innerHTML = "";
+        // Navigation entre onglets
+        function switchTab(tabId) {
+            document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            
+            document.getElementById(tabId).classList.add('active');
+            event.currentTarget.classList.add('active');
 
-                // On ne montre que les interventions "en attente" ou récentes
-                data.forEach(i => {
-                    const isAttente = i.statut === 'en_attente';
-                    const card = document.createElement('div');
-                    card.className = 'inter-card';
-                    
-                    card.innerHTML = `
-                        <div class="inter-info">
-                            <div style="font-weight:bold; color:#38bdf8;">${i.ligne_production} - ${i.machine_num}</div>
-                            <div style="font-size:0.9rem; margin:5px 0;">${i.description}</div>
-                            <div style="font-size:0.8rem; color:#666;">Par: ${i.nom_operateur_intervenant}</div>
-                        </div>
-                        <div>
-                            ${isAttente 
-                                ? `<button class="btn-valider" onclick="validerInter(${i.id})">VALIDER</button>`
-                                : `<span class="status-badge status-valide">SAISI GMAO</span>`
-                            }
-                        </div>
-                    `;
-                    container.appendChild(card);
-                });
-
-                if(data.length === 0) {
-                    container.innerHTML = "<p style='color:#666;'>Aucune intervention enregistrée.</p>";
-                }
-            } catch (err) {
-                console.error("Erreur:", err);
-            }
+            if(tabId === 'historique') chargerHistorique();
         }
 
-        async function validerInter(idInter) {
-            const nomTech = localStorage.getItem('user_nom');
-            
-            const res = await fetch('/api/cloturer_gmao', {
+        async function chargerLignes() {
+            const res = await fetch('/api/lignes');
+            const lignes = await res.json();
+            const select = document.getElementById('ligne-select');
+            lignes.forEach(l => select.add(new Option(l.nom_ligne, l.nom_ligne)));
+        }
+
+        async function envoyerIntervention() {
+            const ligne = document.getElementById('ligne-select').value;
+            const machine = document.getElementById('machine-input').value;
+            const desc = document.getElementById('desc-input').value;
+
+            if(!ligne || !machine || !desc) { alert("Merci de tout remplir !"); return; }
+
+            const res = await fetch('/api/save_intervention', {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json'},
                 body: JSON.stringify({
-                    id_intervention: idInter,
-                    id_tech: nomTech
+                    ligne: ligne, machine: machine, nom_op: techNom,
+                    description: desc, id_referent: techId
                 })
             });
 
             if(res.ok) {
-                loadInterventions(); // Rafraîchir la liste
-            } else {
-                alert("Erreur lors de la validation");
+                alert("Enregistré avec succès !");
+                document.getElementById('machine-input').value = "";
+                document.getElementById('desc-input').value = "";
+                switchTab('historique'); // Bascule auto vers l'historique pour voir le résultat
             }
         }
 
-        // Charger au démarrage
-        loadInterventions();
-        // Rafraîchir toutes les 30 secondes automatiquement
-        setInterval(loadInterventions, 30000);
+        async function chargerHistorique() {
+            const container = document.getElementById('liste-interventions');
+            container.innerHTML = "<p style='text-align:center'>Chargement...</p>";
+            
+            const res = await fetch('/api/historique_complet');
+            const data = await res.json();
+            container.innerHTML = "";
+
+            data.forEach(i => {
+                const dateObj = new Date(i.date_saisie);
+                const dateStr = dateObj.toLocaleDateString('fr-FR', {day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit'});
+                
+                const item = document.createElement('div');
+                item.className = `inter-item statut-${i.statut}`;
+                item.innerHTML = `
+                    <div class="item-header">
+                        <span style="color:#94a3b8">${dateStr}</span>
+                        <span style="color:${i.statut === 'en_attente' ? '#f59e0b' : '#22c55e'}; font-weight:bold">
+                            ${i.statut === 'en_attente' ? 'À FAIRE' : 'SAISI GMAO'}
+                        </span>
+                    </div>
+                    <div class="item-title">${i.ligne_production} - Machine ${i.machine_num}</div>
+                    <div class="item-desc">${i.description}</div>
+                    <div style="margin-top:8px; font-size:0.8rem; color:#38bdf8">Par: ${i.nom_operateur_intervenant}</div>
+                `;
+                container.appendChild(item);
+            });
+        }
+
+        chargerLignes();
     </script>
 </body>
 </html>
