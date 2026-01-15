@@ -3,135 +3,61 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>GMAO - Saisie Référent</title>
+    <title>GMAO - Référent</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
-    <style>
-        .form-group { margin-bottom: 20px; }
-        label { display: block; color: #38bdf8; margin-bottom: 8px; font-weight: bold; text-transform: uppercase; font-size: 0.9rem; }
-        input, select, textarea { 
-            width: 100%; padding: 15px; background: #1a1f26; border: 2px solid #2d353f; 
-            border-radius: 10px; color: white; font-size: 1rem; box-sizing: border-box;
-            outline: none;
-        }
-        input:focus, select:focus, textarea:focus { border-color: #38bdf8; }
-        textarea { height: 80px; resize: none; }
-        .btn-send { 
-            background: #10b981; color: white; border: none; width: 100%; padding: 20px; 
-            border-radius: 12px; font-size: 1.2rem; font-weight: bold; cursor: pointer; margin-top: 10px; 
-            transition: 0.2s;
-        }
-        .btn-send:active { transform: scale(0.98); background: #059669; }
-    </style>
 </head>
 <body>
     <div class="main-container">
-        <h2 style="color: #38bdf8; margin-top: 0;">Nouvelle Intervention</h2>
-        <p id="user-display" style="color: #666; margin-bottom: 25px;">Connecté : -</p>
+        <h2>NOUVELLE INTERVENTION</h2>
+        <p id="user-display" style="color:#8b949e;"></p>
 
         <div class="form-group">
             <label>1. Ligne de Production</label>
-            <select id="ligne">
-                <option value="">-- Chargement des lignes... --</option>
-            </select>
+            <select id="ligne"><option value="">-- Chargement... --</option></select>
         </div>
 
         <div class="form-group">
-            <label>2. N° Machine (Saisie manuelle)</label>
-            <input type="text" id="machine" placeholder="Ex: M05, Presse 2...">
+            <label>2. N° Machine</label>
+            <input type="text" id="machine" placeholder="Saisie manuelle">
         </div>
 
         <div class="form-group">
-            <label>3. Problème constaté</label>
-            <textarea id="probleme" placeholder="Décrivez le défaut..."></textarea>
+            <label>3. Problème / Action</label>
+            <textarea id="desc" style="height:100px; width:100%;" placeholder="Décrivez le problème..."></textarea>
         </div>
 
-        <div class="form-group">
-            <label>4. Action réalisée</label>
-            <textarea id="action" placeholder="Qu'avez-vous fait ?"></textarea>
-        </div>
-
-        <div class="form-group">
-            <label>5. Temps passé</label>
-            <select id="temps"></select>
-        </div>
-
-        <button class="btn-send" onclick="envoyerIntervention()">VALIDER L'INTERVENTION</button>
-        <button onclick="window.location.href='/'" style="background:none; border:none; color:#666; width:100%; margin-top:15px; cursor:pointer;">Annuler et retour</button>
+        <button class="btn-send" onclick="envoyer()" style="width:100%; padding:20px; background:#10b981; color:white; border-radius:10px; font-weight:bold;">VALIDER</button>
+        <button onclick="window.location.href='/'" style="width:100%; margin-top:10px; background:none; border:none; color:#666;">Retour</button>
     </div>
 
     <script>
-        // Affichage du nom de l'utilisateur
-        document.getElementById('user-display').innerText = "Référent : " + localStorage.getItem('user_nom');
+        document.getElementById('user-display').innerText = "Connecté : " + localStorage.getItem('user_nom');
 
-        // --- 1. CHARGEMENT DES LIGNES DEPUIS L'API ---
         async function chargerLignes() {
-            try {
-                const res = await fetch('/api/lignes');
-                const lignes = await res.json();
-                const selectLigne = document.getElementById('ligne');
-                
-                selectLigne.innerHTML = '<option value="">-- Sélectionner la ligne --</option>';
-                lignes.forEach(l => {
-                    let opt = new Option(l.nom_ligne, l.nom_ligne);
-                    selectLigne.add(opt);
-                });
-            } catch (err) {
-                console.error("Erreur chargement lignes:", err);
-                document.getElementById('ligne').innerHTML = '<option value="">Erreur de chargement</option>';
-            }
+            const res = await fetch('/api/lignes');
+            const data = await res.json();
+            const sel = document.getElementById('ligne');
+            sel.innerHTML = '<option value="">-- Sélectionner --</option>';
+            data.forEach(l => { sel.add(new Option(l.nom_ligne, l.nom_ligne)); });
         }
 
-        // --- 2. GENERATION DU MENU TEMPS (5 à 180 min) ---
-        const selectTemps = document.getElementById('temps');
-        for (let i = 5; i <= 180; i += 5) {
-            let h = Math.floor(i / 60);
-            let m = i % 60;
-            let label = h > 0 ? `${h}h${m > 0 ? (m < 10 ? '0'+m : m) : '00'}` : `${m} min`;
-            let option = new Option(label, label);
-            selectTemps.add(option);
-        }
-
-        // --- 3. ENVOI DES DONNEES ---
-        async function envoyerIntervention() {
-            const ligne = document.getElementById('ligne').value;
-            const machine = document.getElementById('machine').value;
-            const prob = document.getElementById('probleme').value;
-            const act = document.getElementById('action').value;
-            const temps = document.getElementById('temps').value;
-
-            if(!ligne || !machine || !prob) {
-                alert("Merci de remplir au moins la ligne, la machine et le problème.");
-                return;
-            }
-
+        async function envoyer() {
             const data = {
-                ligne: ligne,
-                machine: machine,
+                ligne: document.getElementById('ligne').value,
+                machine: document.getElementById('machine').value,
                 nom_op: localStorage.getItem('user_nom'),
-                // On formate la description pour qu'elle soit claire dans le tableau Tech/Admin
-                description: `PROBLÈME: ${prob} | ACTION: ${act} | DURÉE: ${temps}`,
+                description: document.getElementById('desc').value,
                 id_referent: localStorage.getItem('user_id')
             };
+            if(!data.ligne || !data.machine) return alert("Remplissez la ligne et la machine.");
 
-            try {
-                const res = await fetch('/api/save_intervention', {
-                    method: 'POST',
-                    headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify(data)
-                });
-
-                if(res.ok) {
-                    alert("Intervention transmise avec succès !");
-                    window.location.href = '/';
-                } else {
-                    alert("Erreur lors de l'envoi au serveur.");
-                }
-            } catch (err) {
-                alert("Erreur réseau. Vérifiez votre connexion.");
-            }
+            const res = await fetch('/api/save_intervention', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify(data)
+            });
+            if(res.ok) { alert("Enregistré !"); window.location.href = '/'; }
         }
-
-        // Lancement au chargement de la page
         chargerLignes();
     </script>
 </body>
