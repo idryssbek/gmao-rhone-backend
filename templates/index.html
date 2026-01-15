@@ -2,35 +2,56 @@
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>GMAO - Accueil</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <style>
+        .menu-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            padding: 20px;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        .btn-access {
+            height: 200px;
+            border-radius: 15px;
+            border: none;
+            font-size: 1.5rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: transform 0.2s;
+            color: white;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            gap: 15px;
+        }
+        .btn-referent { background: #10b981; } /* Vert */
+        .btn-technicien { background: #38bdf8; } /* Bleu */
+        .btn-access:active { transform: scale(0.95); }
+        .icon { font-size: 3rem; }
+    </style>
 </head>
 <body>
-    <div class="main-container">
-        <h1>Portail GMAO</h1>
-        <p style="color: var(--text-dim); margin-bottom: 3rem;">Sélectionnez votre espace de travail</p>
+    <div class="main-container" style="text-align: center; margin-top: 50px;">
+        <h1 style="color: white; margin-bottom: 40px;">SÉLECTIONNEZ VOTRE ESPACE</h1>
+        
+        <div class="menu-grid">
+            <button class="btn-access btn-referent" onclick="window.location.href='/login?role=referent'">
+                <span class="icon">📋</span>
+                <span>RÉFÉRENT</span>
+            </button>
 
-        <div class="grid-selection" style="grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));">
-            
-            <div class="card" onclick="window.location.href='/page_operateur'">
-                <div class="icon">👤</div>
-                <h3>Opérateur</h3>
-                <p>Signaler un problème machine rapidement</p>
-            </div>
-
-            <div class="card" onclick="window.location.href='/login?role=referent'">
-                <div class="icon" style="filter: drop-shadow(0 0 10px var(--accent-blue));">👥</div>
-                <h3>Référent</h3>
-                <p>Saisir et suivre les interventions</p>
-            </div>
-
-            <div class="card tech-card" onclick="window.location.href='/login?role=technicien'">
-                <div class="icon" style="filter: drop-shadow(0 0 10px var(--accent-orange));">🛠️</div>
-                <h3 style="color: var(--accent-orange);">Technicien</h3>
-                <p>Valider et clôturer les interventions</p>
-            </div>
-
+            <button class="btn-access btn-technicien" onclick="window.location.href='/login?role=technicien'">
+                <span class="icon">🔧</span>
+                <span>TECHNICIEN</span>
+            </button>
         </div>
+
+        <p style="color: #444; margin-top: 50px; font-size: 0.8rem;">GMAO Interne - Accès sécurisé</p>
     </div>
 </body>
 </html>
