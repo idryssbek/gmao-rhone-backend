@@ -16,72 +16,91 @@
             background: var(--bg); color: var(--text); 
             font-family: 'Inter', system-ui, sans-serif; 
             margin: 0; display: flex; justify-content: center; align-items: center; 
-            min-height: 100vh; padding: 20px;
+            min-height: 100vh; padding: 20px; overflow: hidden;
         }
 
         .login-container { width: 100%; max-width: 1000px; text-align: center; }
 
-        h2 { font-weight: 600; text-transform: uppercase; color: var(--accent); margin-bottom: 40px; font-size: 1.5rem; }
+        h2 { font-weight: 600; text-transform: uppercase; color: var(--accent); margin-bottom: 40px; font-size: 1.5rem; letter-spacing: 1px; }
 
-        /* Grille Pro avec Prénoms */
+        /* Grille Utilisateurs */
         .user-grid { 
             display: grid; 
             grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); 
             gap: 20px; 
+            animation: fadeIn 0.5s ease;
         }
 
         .user-card { 
             background: var(--card-bg); 
             border: 2px solid #334155; 
-            padding: 35px 20px; 
-            border-radius: 16px; 
+            padding: 40px 20px; 
+            border-radius: 20px; 
             cursor: pointer; 
-            transition: all 0.2s ease;
-            display: flex; justify-content: center; align-items: center;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
-        .user-card:hover { 
-            border-color: var(--accent); 
-            background: #243146; 
-            transform: scale(1.03);
+        .user-card:hover { border-color: var(--accent); background: #243146; transform: translateY(-5px); }
+        .user-card:active { transform: scale(0.98); }
+        .user-name { font-weight: 600; font-size: 1.3rem; }
+
+        /* Section PIN Style iPhone */
+        #auth-section { display: none; animation: slideUp 0.4s ease-out; }
+
+        .pin-header { margin-bottom: 30px; }
+        .pin-header h1 { font-size: 1.6rem; margin-bottom: 10px; }
+        .pin-header p { color: #94a3b8; font-size: 1rem; }
+
+        /* Les 4 Cercles iPhone */
+        .pin-dots { 
+            display: flex; justify-content: center; gap: 25px; margin-bottom: 50px; 
         }
-
-        .user-card:active { transform: scale(0.95); }
-
-        .user-name { font-weight: 600; font-size: 1.3rem; text-align: center; }
-
-        /* Pavé Numérique */
-        #auth-section { 
-            background: var(--card-bg); padding: 40px; border-radius: 24px; 
-            width: 350px; margin: 0 auto; display: none;
-            box-shadow: 0 25px 50px rgba(0,0,0,0.5);
+        .dot { 
+            width: 18px; height: 18px; border: 2px solid var(--accent); 
+            border-radius: 50%; transition: all 0.2s; 
         }
+        .dot.filled { background: var(--accent); box-shadow: 0 0 15px var(--accent); }
 
-        .pin-view { 
-            font-size: 2.5rem; letter-spacing: 15px; margin-bottom: 30px; 
-            color: var(--accent); min-height: 50px;
+        /* Pavé Numérique Circulaire */
+        .numpad { 
+            display: grid; grid-template-columns: repeat(3, 1fr); 
+            gap: 20px; width: 280px; margin: 0 auto; 
         }
-
-        .numpad { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
         .num-btn { 
-            background: #0f172a; color: white; border: 1px solid #334155; 
-            padding: 20px; border-radius: 12px; font-size: 1.5rem; cursor: pointer; font-weight: bold;
+            width: 75px; height: 75px; border-radius: 50%; 
+            background: #1e293b; color: white; border: 1px solid #334155; 
+            font-size: 1.8rem; cursor: pointer; transition: all 0.1s;
+            display: flex; align-items: center; justify-content: center;
         }
-        .num-btn:active { background: var(--accent); color: var(--bg); }
+        .num-btn:active { background: white; color: black; }
+        .num-btn.special { border: none; background: transparent; font-size: 1rem; color: #94a3b8; }
 
-        .btn-cancel { margin-top:25px; background:none; border:none; color:#64748b; cursor:pointer; font-size: 1rem; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes slideUp { from { transform: translateY(30px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+        @keyframes shake { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-10px); } 75% { transform: translateX(10px); } }
+        .error-shake { animation: shake 0.3s ease-in-out; }
     </style>
 </head>
 <body>
 
     <div class="login-container">
-        <h2 id="page-title">Sélectionnez votre profil</h2>
+        <h2 id="page-title">Système GMAO</h2>
         
         <div id="user-list" class="user-grid"></div>
 
         <div id="auth-section">
-            <div id="selected-user-name" style="font-size: 1.4rem; margin-bottom: 20px; font-weight: bold; color: var(--accent);"></div>
-            <div class="pin-view" id="pin-view">••••</div>
+            <div class="pin-header">
+                <h1 id="selected-user-name">Prénom</h1>
+                <p>Saisissez votre code PIN</p>
+            </div>
+
+            <div class="pin-dots" id="pin-dots">
+                <div class="dot"></div>
+                <div class="dot"></div>
+                <div class="dot"></div>
+                <div class="dot"></div>
+            </div>
+
             <div class="numpad">
                 <button class="num-btn" onclick="pressNum('1')">1</button>
                 <button class="num-btn" onclick="pressNum('2')">2</button>
@@ -92,11 +111,10 @@
                 <button class="num-btn" onclick="pressNum('7')">7</button>
                 <button class="num-btn" onclick="pressNum('8')">8</button>
                 <button class="num-btn" onclick="pressNum('9')">9</button>
-                <button class="num-btn" style="color:#ef4444" onclick="pressNum('del')">←</button>
+                <button class="num-btn special" onclick="location.reload()">ANNULER</button>
                 <button class="num-btn" onclick="pressNum('0')">0</button>
-                <button class="num-btn" style="color:#22c55e" onclick="validerConnexion()">OK</button>
+                <button class="num-btn special" onclick="pressNum('del')">EFFACER</button>
             </div>
-            <button class="btn-cancel" onclick="location.reload()">← Retour à la liste</button>
         </div>
     </div>
 
@@ -136,42 +154,65 @@
             document.getElementById('selected-user-name').innerText = name;
         }
 
+        function updateDots() {
+            const dots = document.querySelectorAll('.dot');
+            dots.forEach((dot, index) => {
+                if (index < currentPin.length) dot.classList.add('filled');
+                else dot.classList.remove('filled');
+            });
+        }
+
+        function pressNum(n) {
+            if (n === 'del') {
+                currentPin = currentPin.slice(0, -1);
+            } else if (currentPin.length < 4) {
+                currentPin += n;
+            }
+            updateDots();
+
+            // VALIDATION AUTOMATIQUE AU 4ème CHIFFRE
+            if (currentPin.length === 4) {
+                setTimeout(validerConnexion, 200);
+            }
+        }
+
+        async function validerConnexion() {
+            const url = (roleCible === 'referent') ? '/api/login_sans_pin' : '/login_gmao';
+            try {
+                const res = await fetch(url, {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ username: selectedUser.username, password: currentPin })
+                });
+                const data = await res.json();
+                
+                if(data.status === "success") {
+                    localStorage.setItem('user_id', data.id);
+                    localStorage.setItem('user_nom', data.nom);
+                    window.location.href = (roleCible === 'referent') ? '/page_referent' : '/page_technicien';
+                } else {
+                    // EFFET ERREUR IPHONE
+                    const section = document.getElementById('auth-section');
+                    section.classList.add('error-shake');
+                    setTimeout(() => section.classList.remove('error-shake'), 300);
+                    currentPin = "";
+                    updateDots();
+                }
+            } catch (e) {
+                alert("Erreur de connexion serveur");
+            }
+        }
+
         async function init() {
-            // Affichage immédiat via cache
             const cached = localStorage.getItem(`cache_users_${roleCible}`);
             if(cached) displayUsers(JSON.parse(cached));
 
-            // Mise à jour silencieuse
             try {
                 const res = await fetch('/api/admin/users');
                 const users = await res.json();
                 displayUsers(users);
                 localStorage.setItem(`cache_users_${roleCible}`, JSON.stringify(users));
-            } catch (e) { console.log("Mode hors-ligne ou erreur serveur"); }
-        }
-
-        function pressNum(n) {
-            if(n === 'del') currentPin = currentPin.slice(0, -1);
-            else if(currentPin.length < 4) currentPin += n;
-            document.getElementById('pin-view').innerText = "•".repeat(currentPin.length) || "••••";
-        }
-
-        async function validerConnexion() {
-            const url = (roleCible === 'referent') ? '/api/login_sans_pin' : '/login_gmao';
-            const res = await fetch(url, {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({ username: selectedUser.username, password: currentPin })
-            });
-            const data = await res.json();
-            if(data.status === "success") {
-                localStorage.setItem('user_id', data.id);
-                localStorage.setItem('user_nom', data.nom);
-                window.location.href = (roleCible === 'referent') ? '/page_referent' : '/page_technicien';
-            } else {
-                alert("Code PIN incorrect");
-                currentPin = ""; document.getElementById('pin-view').innerText = "••••";
-            }
+            } catch (e) { console.log("Erreur sync"); }
         }
 
         init();
