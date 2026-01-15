@@ -11,12 +11,13 @@
             --accent: #38bdf8;
             --text-main: #f1f5f9;
             --success: #10b981;
+            --warning: #f59e0b;
         }
 
         body {
             background-color: var(--bg-color);
             color: var(--text-main);
-            font-family: 'Segoe UI', sans-serif;
+            font-family: 'Inter', system-ui, sans-serif;
             margin: 0;
             display: flex;
             flex-direction: column;
@@ -60,7 +61,8 @@
             padding: 25px 40px;
             border-radius: 24px;
             box-shadow: 0 20px 50px rgba(0,0,0,0.4);
-            display: none; /* Masqué par défaut */
+            display: none;
+            animation: fadeIn 0.3s ease;
         }
 
         .container.active { display: block; }
@@ -98,82 +100,92 @@
             display: grid;
             grid-template-columns: 1fr 3fr;
             gap: 20px;
+            align-items: center;
         }
 
         .btn-send {
             background: var(--success); color: white; border: none;
             padding: 22px; border-radius: 16px; font-size: 1.3rem;
-            font-weight: bold; cursor: pointer;
+            font-weight: bold; cursor: pointer; transition: transform 0.1s;
         }
+        .btn-send:active { transform: scale(0.98); }
 
         /* Style Historique */
         .history-list { display: flex; flex-direction: column; gap: 15px; }
         .history-item {
             background: #0f172a; padding: 20px; border-radius: 15px;
-            border-left: 5px solid #475569;
+            border-left: 6px solid #475569;
+            transition: all 0.3s ease;
         }
-        .status-en_attente { border-left-color: #f59e0b; }
-        .status-saisi_gmao { border-left-color: var(--success); }
+        .status-en_attente { border-left-color: var(--warning); background: rgba(245, 158, 11, 0.05); }
+        .status-saisi_gmao { border-left-color: var(--success); background: rgba(16, 185, 129, 0.05); }
         
-        .history-date { font-size: 0.8rem; color: #64748b; margin-bottom: 5px; }
+        .history-header { display: flex; justify-content: space-between; margin-bottom: 10px; }
+        .history-date { font-size: 0.8rem; color: #64748b; }
         .history-title { font-weight: bold; font-size: 1.1rem; color: var(--accent); }
+        .badge-status { padding: 4px 10px; border-radius: 6px; font-size: 0.75rem; font-weight: bold; }
+        .badge-attente { background: var(--warning); color: black; }
+        .badge-ok { background: var(--success); color: white; }
+
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 
         @media (max-width: 800px) {
             .form-grid { grid-template-columns: 1fr; }
-            .footer-actions { grid-template-columns: 1fr; }
+            .footer-actions { grid-template-columns: 1fr; text-align: center; }
         }
     </style>
 </head>
 <body>
 
     <div class="tabs">
-        <button class="tab-btn active" onclick="switchTab('saisie')">Nouvelle Saisie</button>
-        <button class="tab-btn" onclick="switchTab('historique')">Mon Historique</button>
+        <button id="btn-tab-saisie" class="tab-btn active" onclick="switchTab('saisie')">Nouvelle Saisie</button>
+        <button id="btn-tab-histo" class="tab-btn" onclick="switchTab('historique')">Mon Historique <span id="count-attente" style="color:var(--warning)"></span></button>
     </div>
 
     <div id="tab-saisie" class="container active">
         <header>
-            <h2>Nouvelle Intervention</h2>
+            <h2>Demande d'Intervention</h2>
             <div class="user-tag" id="user-display">Référent : -</div>
         </header>
 
         <div class="form-grid">
             <div class="col">
                 <div class="form-group">
-                    <label>1. Ligne de Production</label>
-                    <select id="ligne"><option value="">-- Sélectionner --</option></select>
+                    <label>🏭 Ligne de Production</label>
+                    <select id="ligne"><option value="">-- Choisir --</option></select>
                 </div>
                 <div class="form-group">
-                    <label>2. Numéro de Machine</label>
+                    <label>🔢 Numéro de Machine</label>
                     <input type="text" id="machine" placeholder="Ex: M-05">
                 </div>
                 <div class="form-group">
-                    <label>3. Temps passé</label>
+                    <label>⏱️ Temps estimé / passé</label>
                     <select id="temps"></select>
                 </div>
             </div>
 
             <div class="col">
                 <div class="form-group">
-                    <label>4. Problème constaté</label>
-                    <textarea id="probleme" placeholder="Défaut..."></textarea>
+                    <label>❓ Problème constaté</label>
+                    <textarea id="probleme" placeholder="Décrivez le défaut..."></textarea>
                 </div>
                 <div class="form-group">
-                    <label>5. Action réalisée</label>
-                    <textarea id="action" placeholder="Dépannage..."></textarea>
+                    <label>🛠️ Action réalisée (si applicable)</label>
+                    <textarea id="action" placeholder="Qu'avez-vous tenté ?"></textarea>
                 </div>
             </div>
         </div>
 
         <div class="footer-actions">
-            <a href="/" style="text-align:center; color:#64748b; text-decoration:none;">ANNULER</a>
-            <button class="btn-send" onclick="envoyerMaintenance()">ENVOYER MAINTENANCE</button>
+            <a href="/login?role=referent" style="color:#64748b; text-decoration:none; font-weight:bold;">🚪 QUITTER</a>
+            <button class="btn-send" onclick="envoyerMaintenance()">ENVOYER À LA MAINTENANCE</button>
         </div>
     </div>
 
     <div id="tab-historique" class="container">
         <header>
-            <h2>Mes dernières saisies</h2>
+            <h2>Suivi de mes demandes</h2>
+            <div style="font-size: 0.8rem; color: var(--success);">● LIVE : Mis à jour auto</div>
         </header>
         <div id="history-container" class="history-list">
             </div>
@@ -182,6 +194,8 @@
     <script>
         const myName = localStorage.getItem('user_nom');
         const myId = localStorage.getItem('user_id');
+        let memoireHistorique = ""; // Pour éviter de rafraîchir le DOM inutilement
+
         document.getElementById('user-display').innerText = "Référent : " + (myName || "Utilisateur");
 
         function switchTab(tab) {
@@ -190,15 +204,15 @@
             
             if(tab === 'saisie') {
                 document.getElementById('tab-saisie').classList.add('active');
-                event.currentTarget.classList.add('active');
+                document.getElementById('btn-tab-saisie').classList.add('active');
             } else {
                 document.getElementById('tab-historique').classList.add('active');
-                event.currentTarget.classList.add('active');
+                document.getElementById('btn-tab-histo').classList.add('active');
                 chargerMonHistorique();
             }
         }
 
-        // --- Logique Formulaire ---
+        // --- Remplissage des champs ---
         async function chargerLignes() {
             const res = await fetch('/api/lignes');
             const lignes = await res.json();
@@ -207,23 +221,29 @@
         }
 
         const selectTemps = document.getElementById('temps');
-        for (let i = 5; i <= 180; i += 5) {
-            let h = Math.floor(i / 60);
-            let m = i % 60;
-            let label = h > 0 ? `${h}h${m > 0 ? (m < 10 ? '0'+m : m) : '00'}` : `${m} min`;
+        for (let i = 5; i <= 120; i += 5) {
+            let label = i >= 60 ? `${Math.floor(i/60)}h${(i%60||'00')}` : `${i} min`;
             selectTemps.add(new Option(label, label));
         }
 
+        // --- Envoi ---
         async function envoyerMaintenance() {
+            const prob = document.getElementById('probleme').value;
+            const act = document.getElementById('action').value;
+            const dur = document.getElementById('temps').value;
+
             const payload = {
                 ligne: document.getElementById('ligne').value,
                 machine: document.getElementById('machine').value,
                 nom_op: myName,
-                description: `PB: ${document.getElementById('probleme').value} | ACT: ${document.getElementById('action').value} | DURÉE: ${document.getElementById('temps').value}`,
+                description: `PROBLÈME: ${prob} | ACTION: ${act} | DURÉE: ${dur}`,
                 id_referent: myId
             };
 
-            if(!payload.ligne || !payload.machine) { alert("Ligne et Machine obligatoires"); return; }
+            if(!payload.ligne || !payload.machine || !prob) { 
+                alert("Veuillez remplir au moins la Ligne, la Machine et le Problème."); 
+                return; 
+            }
 
             const res = await fetch('/api/save_intervention', {
                 method: 'POST',
@@ -232,38 +252,56 @@
             });
 
             if(res.ok) {
-                alert("✅ Transmis !");
+                alert("✅ Demande envoyée avec succès !");
                 location.reload();
             }
         }
 
-        // --- Logique Historique ---
+        // --- Historique Live ---
         async function chargerMonHistorique() {
-            const container = document.getElementById('history-container');
-            container.innerHTML = "Chargement...";
-            
-            const res = await fetch('/api/historique_complet');
-            const data = await res.json();
-            
-            // On ne garde que les interventions de ce référent
-            const mesInters = data.filter(i => String(i.id_referent) === String(myId));
+            try {
+                const res = await fetch('/api/historique_complet');
+                const data = await res.json();
+                
+                const mesInters = data.filter(i => String(i.id_referent) === String(myId));
+                
+                // On génère le HTML pour comparer
+                const nouveauHtml = mesInters.length === 0 ? 
+                    "<p style='text-align:center; color:#64748b;'>Aucune demande envoyée.</p>" :
+                    mesInters.map(i => {
+                        const date = new Date(i.date_saisie).toLocaleString('fr-FR', {day:'2-digit', month:'short', hour:'2-digit', minute:'2-digit'});
+                        const isAttente = i.statut === 'en_attente';
+                        return `
+                            <div class="history-item status-${i.statut}">
+                                <div class="history-header">
+                                    <span class="history-date">${date}</span>
+                                    <span class="badge-status ${isAttente ? 'badge-attente' : 'badge-ok'}">
+                                        ${isAttente ? '⏳ EN ATTENTE' : '✅ SAISI GMAO'}
+                                    </span>
+                                </div>
+                                <div class="history-title">${i.ligne_production} - Machine ${i.machine_num}</div>
+                                <div style="font-size:0.9rem; margin-top:8px; color:#cbd5e1;">${i.description}</div>
+                            </div>
+                        `;
+                    }).join('');
 
-            container.innerHTML = mesInters.length === 0 ? "Aucune intervention trouvée." : "";
+                if (memoireHistorique !== nouveauHtml) {
+                    document.getElementById('history-container').innerHTML = nouveauHtml;
+                    memoireHistorique = nouveauHtml;
+                }
 
-            mesInters.forEach(i => {
-                const date = new Date(i.date_saisie).toLocaleString('fr-FR', {day:'2-digit', month:'short', hour:'2-digit', minute:'2-digit'});
-                const div = document.createElement('div');
-                div.className = `history-item status-${i.statut}`;
-                div.innerHTML = `
-                    <div class="history-date">${date} - <b style="color:${i.statut === 'en_attente' ? '#f59e0b' : '#10b981'}">${i.statut.toUpperCase()}</b></div>
-                    <div class="history-title">${i.ligne_production} - Machine ${i.machine_num}</div>
-                    <div style="font-size:0.9rem; margin-top:5px;">${i.description}</div>
-                `;
-                container.appendChild(div);
-            });
+                // Petit compteur de notif pour l'onglet
+                const attenteCount = mesInters.filter(i => i.statut === 'en_attente').length;
+                document.getElementById('count-attente').innerText = attenteCount > 0 ? `(${attenteCount})` : "";
+
+            } catch (e) { console.error("Erreur sync historique"); }
         }
 
+        // Init
         chargerLignes();
+        // Rafraîchissement automatique toutes les 2.5 secondes
+        setInterval(chargerMonHistorique, 2500);
+
     </script>
 </body>
 </html>
