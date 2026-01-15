@@ -80,6 +80,17 @@ def login_gmao():
     if user: return jsonify({"status": "success", "id": user['id'], "role": user['role'], "nom": user['nom_complet']})
     return jsonify({"status": "error"}), 401
 
+# NOUVELLE ROUTE : Login sans PIN (pour les référents)
+@app.route('/api/login_sans_pin', methods=['POST'])
+def login_sans_pin():
+    data = request.json
+    conn = get_db_connection(); cur = conn.cursor()
+    cur.execute("SELECT id, role, nom_complet FROM gmao_users WHERE username = %s", (data.get('username'),))
+    user = cur.fetchone(); cur.close(); conn.close()
+    if user:
+        return jsonify({"status": "success", "id": user['id'], "role": user['role'], "nom": user['nom_complet']})
+    return jsonify({"status": "error"}), 404
+
 # --- API LIGNES ---
 @app.route('/api/lignes', methods=['GET', 'POST'])
 def manage_lignes():
@@ -121,13 +132,10 @@ def get_historique_complet():
     rows = cur.fetchall(); cur.close(); conn.close()
     return jsonify(rows)
 
-# MISE À JOUR : Route flexible pour l'admin et les techniciens
 @app.route('/api/cloturer_gmao', methods=['POST'])
 def cloturer_gmao():
     data = request.json
-    # On récupère le statut envoyé, sinon par défaut 'saisi_gmao'
     nouveau_statut = data.get('statut', 'saisi_gmao')
-    
     conn = get_db_connection(); cur = conn.cursor()
     cur.execute("UPDATE interventions SET statut = %s, valide_par_tech = %s WHERE id = %s", 
                (nouveau_statut, str(data['id_tech']), int(data['id_intervention'])))
@@ -178,7 +186,6 @@ def setup_db():
     initialisation_automatique()
     return "Base vérifiée et mise à jour."
 
-# --- LANCEMENT DU SERVEUR ---
 if __name__ == "__main__":
     initialisation_automatique() 
     app.run(host='0.0.0.0', port=int(os.environ.get("PORT", 10000)))
