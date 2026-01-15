@@ -5,106 +5,205 @@
     <title>GMAO - Administration</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
     <style>
-        .admin-nav { display: flex; gap: 10px; margin-bottom: 20px; }
-        .nav-tab { padding: 10px 20px; background: #1a1f26; color: #8b949e; border-radius: 8px; cursor: pointer; border: 1px solid #333; }
-        .nav-tab.active { background: #38bdf8; color: black; font-weight: bold; border-color: #38bdf8; }
-        .tab-content { display: none; background: #1a1f26; padding: 20px; border-radius: 12px; border: 1px solid #333; }
+        body { 
+            display: flex; 
+            height: 100vh; 
+            margin: 0; 
+            background: #0d1117; 
+            color: white; 
+            font-family: sans-serif;
+            overflow: hidden;
+        }
+
+        /* Barre latérale gauche (Menu) */
+        .sidebar { 
+            width: 200px; 
+            background: #161b22; 
+            border-right: 1px solid #30363d; 
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Zone centrale (Contenu) */
+        .main-content { 
+            flex: 1; 
+            padding: 30px; 
+            overflow-y: auto; 
+        }
+
+        /* Barre latérale droite (Console Debug) */
+        .debug-sidebar { 
+            width: 300px; 
+            background: #000; 
+            border-left: 1px solid #38bdf8; 
+            display: flex; 
+            flex-direction: column;
+        }
+
+        .debug-title {
+            background: #1a1f26;
+            color: #38bdf8;
+            padding: 10px;
+            font-weight: bold;
+            font-size: 0.8rem;
+            border-bottom: 1px solid #38bdf8;
+        }
+
+        #debug-console {
+            flex: 1;
+            padding: 15px;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            overflow-y: auto;
+            color: #0f0;
+            line-height: 1.4;
+        }
+
+        /* Styles Éléments */
+        .nav-item { 
+            padding: 12px; 
+            cursor: pointer; 
+            border-radius: 6px; 
+            margin-bottom: 5px; 
+            color: #8b949e; 
+        }
+        .nav-item.active { background: #1f6feb; color: white; }
+        .tab-content { display: none; }
         .tab-content.active { display: block; }
-        table { width: 100%; border-collapse: collapse; margin-top: 15px; }
-        th { text-align: left; color: #38bdf8; padding: 12px; border-bottom: 2px solid #333; font-size: 0.8rem; }
-        td { padding: 12px; border-bottom: 1px solid #222; }
-        #debug-console { background: #000; color: #0f0; font-family: monospace; font-size: 11px; padding: 10px; height: 100px; overflow-y: auto; border: 1px solid #444; margin-top: 20px; }
+        
+        .card { background: #161b22; border: 1px solid #30363d; padding: 20px; border-radius: 8px; margin-bottom: 20px; }
+        input, select { background: #0d1117; border: 1px solid #30363d; color: white; padding: 10px; border-radius: 6px; margin-bottom: 10px; width: 100%; box-sizing: border-box; }
+        button { background: #238636; color: white; border: none; padding: 10px; border-radius: 6px; cursor: pointer; width: 100%; font-weight: bold; }
+        button.btn-del { background: #da3633; width: auto; padding: 5px 10px; }
     </style>
 </head>
 <body>
-    <div class="main-container" style="max-width: 1100px;">
-        <header style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-            <h1>ADMINISTRATION</h1>
-            <button onclick="window.location.href='/'">QUITTER</button>
-        </header>
 
-        <div class="admin-nav">
-            <div class="nav-tab active" onclick="openTab(event, 'equipe')">EQUIPE</div>
-            <div class="nav-tab" onclick="openTab(event, 'lignes')">LIGNES</div>
-            <div class="nav-tab" onclick="openTab(event, 'inter')">INTERVENTIONS</div>
+    <div class="sidebar">
+        <h3 style="color:#58a6ff;">GMAO Admin</h3>
+        <div class="nav-item active" onclick="showTab('lignes', this)">🏭 Lignes</div>
+        <div class="nav-item" onclick="showTab('equipe', this)">👥 Équipe</div>
+        <div class="nav-item" onclick="showTab('inter', this)">📋 Interventions</div>
+        <button onclick="window.location.href='/'" style="margin-top:auto; background:#30363d;">Quitter</button>
+    </div>
+
+    <div class="main-content">
+        
+        <div id="tab-lignes" class="tab-content active">
+            <h2>Gestion des Lignes</h2>
+            <div class="card">
+                <label>Nom de la nouvelle ligne :</label>
+                <input type="text" id="l-nom" placeholder="Ex: Presse 05, Ligne Montage...">
+                <button onclick="addLigne()">CRÉER LA LIGNE</button>
+            </div>
+            <div class="card">
+                <h3>Lignes actives</h3>
+                <div id="list-lignes"></div>
+            </div>
         </div>
 
-        <div id="equipe" class="tab-content active">
-            <div style="display:flex; gap:10px; margin-bottom:15px;">
+        <div id="tab-equipe" class="tab-content">
+            <h2>Gestion d'Équipe</h2>
+            <div class="card">
                 <input type="text" id="u-nom" placeholder="Nom">
                 <input type="text" id="u-pin" placeholder="Code PIN">
-                <select id="u-role"><option value="referent">Référent</option><option value="technicien">Technicien</option></select>
-                <button onclick="addUser()">AJOUTER</button>
+                <select id="u-role">
+                    <option value="referent">Référent</option>
+                    <option value="technicien">Technicien</option>
+                </select>
+                <button onclick="addUser()">AJOUTER MEMBRE</button>
             </div>
-            <table><thead><tr><th>Nom</th><th>Rôle</th><th>Code</th><th>Action</th></tr></thead><tbody id="table-users"></tbody></table>
+            <div id="list-users"></div>
         </div>
 
-        <div id="lignes" class="tab-content">
-            <div style="display:flex; gap:10px; margin-bottom:15px;">
-                <input type="text" id="l-nom" placeholder="Nom de la ligne">
-                <button onclick="addLigne()">CREER LIGNE</button>
-            </div>
-            <ul id="list-lignes" style="list-style:none; padding:0;"></ul>
+        <div id="tab-inter" class="tab-content">
+            <h2>Historique</h2>
+            <div id="list-inter"></div>
         </div>
 
-        <div id="inter" class="tab-content">
-            <button onclick="window.location.href='/api/export_csv'" style="background:#f59e0b; color:white;">📥 EXPORTER (.CSV)</button>
-            <table><thead><tr><th>Date</th><th>Ligne</th><th>Machine</th><th>Actions</th></tr></thead><tbody id="table-inter"></tbody></table>
-        </div>
+    </div>
 
-        <div id="debug-console">>> Console prête.</div>
+    <div class="debug-sidebar">
+        <div class="debug-title">CONSOLE DE DEBUG SYSTEME</div>
+        <div id="debug-console">
+            <div>>> Attente d'actions...</div>
+        </div>
     </div>
 
     <script>
-        function log(m, e=false) { const c = document.getElementById('debug-console'); c.innerHTML += `<div style="color:${e?'red':'#0f0'}">>> ${m}</div>`; c.scrollTop = c.scrollHeight; }
-        function openTab(evt, t) { 
-            document.querySelectorAll(".tab-content").forEach(x => x.classList.remove("active"));
-            document.querySelectorAll(".nav-tab").forEach(x => x.classList.remove("active"));
-            document.getElementById(t).classList.add("active"); evt.currentTarget.classList.add("active");
+        // LOGS DANS LA CONSOLE DE DROITE
+        function log(msg, isError = false) {
+            const consoleDiv = document.getElementById('debug-console');
+            const time = new Date().toLocaleTimeString();
+            const color = isError ? '#ff4444' : '#00ff00';
+            consoleDiv.innerHTML += `<div style="color:${color}">[${time}] ${msg}</div>`;
+            consoleDiv.scrollTop = consoleDiv.scrollHeight;
         }
 
+        // NAVIGATION
+        function showTab(tabId, el) {
+            document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
+            document.getElementById('tab-' + tabId).classList.add('active');
+            el.classList.add('active');
+            log("Navigation vers : " + tabId);
+        }
+
+        // GESTION DES LIGNES
         async function loadLignes() {
-            const res = await fetch('/api/lignes');
-            const data = await res.json();
-            const list = document.getElementById('list-lignes');
-            list.innerHTML = "";
-            data.forEach(l => {
-                list.innerHTML += `<li style="padding:10px; border-bottom:1px solid #333; display:flex; justify-content:space-between;">${l.nom_ligne} <button onclick="deleteLigne(${l.id})">Supprimer</button></li>`;
-            });
-            log(data.length + " lignes chargées.");
+            log("Chargement des lignes...");
+            try {
+                const res = await fetch('/api/lignes');
+                const data = await res.json();
+                const container = document.getElementById('list-lignes');
+                container.innerHTML = "";
+                data.forEach(l => {
+                    container.innerHTML += `
+                        <div style="display:flex; justify-content:space-between; padding:10px; border-bottom:1px solid #333;">
+                            <span>${l.nom_ligne}</span>
+                            <button class="btn-del" onclick="deleteLigne(${l.id})">Supprimer</button>
+                        </div>`;
+                });
+                log(data.length + " lignes récupérées avec succès.");
+            } catch (e) {
+                log("ERREUR CHARGEMENT LIGNES : " + e.message, true);
+            }
         }
 
         async function addLigne() {
             const nom = document.getElementById('l-nom').value;
-            await fetch('/api/lignes', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({nom}) });
-            document.getElementById('l-nom').value = ""; loadLignes();
+            if(!nom) return log("Erreur : le nom est vide", true);
+
+            log("Tentative d'ajout de la ligne : " + nom);
+            try {
+                const res = await fetch('/api/lignes', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ nom: nom })
+                });
+                if(res.ok) {
+                    log("Succès : Ligne créée.");
+                    document.getElementById('l-nom').value = "";
+                    loadLignes();
+                } else {
+                    log("Erreur serveur lors de la création", true);
+                }
+            } catch (e) {
+                log("ERREUR RESEAU : " + e.message, true);
+            }
         }
 
-        async function deleteLigne(id) { await fetch(`/api/lignes/${id}`, { method: 'DELETE' }); loadLignes(); }
-
-        async function loadUsers() {
-            const res = await fetch('/api/admin/users');
-            const data = await res.json();
-            const tb = document.getElementById('table-users'); tb.innerHTML = "";
-            data.forEach(u => { tb.innerHTML += `<tr><td>${u.nom_complet}</td><td>${u.role}</td><td>${u.password_hash}</td><td><button onclick="deleteUser(${u.id})">X</button></td></tr>`; });
+        async function deleteLigne(id) {
+            log("Suppression ligne ID: " + id);
+            await fetch(`/api/lignes/${id}`, { method: 'DELETE' });
+            loadLignes();
         }
 
-        async function addUser() {
-            const d = { nom: document.getElementById('u-nom').value, username: document.getElementById('u-nom').value, password: document.getElementById('u-pin').value, role: document.getElementById('u-role').value };
-            await fetch('/api/admin/users', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(d) });
-            loadUsers();
-        }
-
-        async function loadInter() {
-            const res = await fetch('/api/historique_complet');
-            const data = await res.json();
-            const tb = document.getElementById('table-inter'); tb.innerHTML = "";
-            data.forEach(i => { tb.innerHTML += `<tr><td>${new Date(i.date_saisie).toLocaleDateString()}</td><td>${i.ligne_production}</td><td>${i.machine_num}</td><td><button onclick="delInter(${i.id})">DEL</button></td></tr>`; });
-        }
-
-        async function delInter(id) { if(confirm("Supprimer ?")) { await fetch(`/api/admin/delete_inter/${id}`, {method:'DELETE'}); loadInter(); } }
-
-        window.onload = () => { loadLignes(); loadUsers(); loadInter(); };
+        // Initialisation
+        window.onload = () => {
+            loadLignes();
+        };
     </script>
 </body>
 </html>
