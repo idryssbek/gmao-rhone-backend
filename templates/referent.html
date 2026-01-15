@@ -3,61 +3,217 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>GMAO - Référent</title>
+    <title>GMAO - Nouvelle Intervention</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <style>
+        :root {
+            --bg-color: #0f172a;
+            --card-bg: #1e293b;
+            --accent: #38bdf8;
+            --text-main: #f1f5f9;
+            --success: #10b981;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 500px;
+            background: var(--card-bg);
+            padding: 30px;
+            border-radius: 20px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+        }
+
+        h2 {
+            color: var(--accent);
+            text-align: center;
+            font-size: 1.5rem;
+            margin-bottom: 25px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .user-info {
+            text-align: center;
+            font-size: 0.9rem;
+            color: #94a3b8;
+            margin-bottom: 30px;
+            border-bottom: 1px solid #334155;
+            padding-bottom: 15px;
+        }
+
+        .form-group {
+            margin-bottom: 25px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 10px;
+            font-weight: 600;
+            color: var(--accent);
+            font-size: 0.9rem;
+        }
+
+        input, select, textarea {
+            width: 100%;
+            padding: 14px;
+            background: #0f172a;
+            border: 2px solid #334155;
+            border-radius: 12px;
+            color: white;
+            font-size: 1rem;
+            transition: border-color 0.3s;
+            box-sizing: border-box;
+        }
+
+        input:focus, select:focus, textarea:focus {
+            border-color: var(--accent);
+            outline: none;
+        }
+
+        textarea {
+            height: 80px;
+            resize: none;
+        }
+
+        .btn-send {
+            background: var(--success);
+            color: white;
+            border: none;
+            width: 100%;
+            padding: 18px;
+            border-radius: 14px;
+            font-size: 1.1rem;
+            font-weight: bold;
+            cursor: pointer;
+            margin-top: 20px;
+            transition: all 0.2s;
+            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.2);
+        }
+
+        .btn-send:active {
+            transform: scale(0.97);
+        }
+
+        .btn-back {
+            display: block;
+            text-align: center;
+            margin-top: 20px;
+            color: #64748b;
+            text-decoration: none;
+            font-size: 0.9rem;
+        }
+    </style>
 </head>
 <body>
-    <div class="main-container">
-        <h2>NOUVELLE INTERVENTION</h2>
-        <p id="user-display" style="color:#8b949e;"></p>
+    <div class="container">
+        <h2>Nouvelle Intervention</h2>
+        <div class="user-info" id="user-display">Référent : Chargement...</div>
 
         <div class="form-group">
             <label>1. Ligne de Production</label>
-            <select id="ligne"><option value="">-- Chargement... --</option></select>
+            <select id="ligne">
+                <option value="">-- Sélectionner la ligne --</option>
+            </select>
         </div>
 
         <div class="form-group">
-            <label>2. N° Machine</label>
-            <input type="text" id="machine" placeholder="Saisie manuelle">
+            <label>2. Numéro de Machine</label>
+            <input type="text" id="machine" placeholder="Ex: M-05, Presse-02...">
         </div>
 
         <div class="form-group">
-            <label>3. Problème / Action</label>
-            <textarea id="desc" style="height:100px; width:100%;" placeholder="Décrivez le problème..."></textarea>
+            <label>3. Problème constaté</label>
+            <textarea id="probleme" placeholder="Quel est le défaut ?"></textarea>
         </div>
 
-        <button class="btn-send" onclick="envoyer()" style="width:100%; padding:20px; background:#10b981; color:white; border-radius:10px; font-weight:bold;">VALIDER</button>
-        <button onclick="window.location.href='/'" style="width:100%; margin-top:10px; background:none; border:none; color:#666;">Retour</button>
+        <div class="form-group">
+            <label>4. Action réalisée</label>
+            <textarea id="action" placeholder="Qu'avez-vous fait ?"></textarea>
+        </div>
+
+        <div class="form-group">
+            <label>5. Temps passé</label>
+            <select id="temps"></select>
+        </div>
+
+        <button class="btn-send" onclick="envoyerMaintenance()">ENVOYER À LA MAINTENANCE</button>
+        
+        <a href="/" class="btn-back">Annuler et retour</a>
     </div>
 
     <script>
-        document.getElementById('user-display').innerText = "Connecté : " + localStorage.getItem('user_nom');
+        // Affichage utilisateur
+        document.getElementById('user-display').innerText = "Référent : " + (localStorage.getItem('user_nom') || "Utilisateur");
 
+        // 1. Charger les lignes dynamiquement
         async function chargerLignes() {
-            const res = await fetch('/api/lignes');
-            const data = await res.json();
-            const sel = document.getElementById('ligne');
-            sel.innerHTML = '<option value="">-- Sélectionner --</option>';
-            data.forEach(l => { sel.add(new Option(l.nom_ligne, l.nom_ligne)); });
+            try {
+                const res = await fetch('/api/lignes');
+                const lignes = await res.json();
+                const sel = document.getElementById('ligne');
+                lignes.forEach(l => {
+                    sel.add(new Option(l.nom_ligne, l.nom_ligne));
+                });
+            } catch (e) { console.error("Erreur lignes:", e); }
         }
 
-        async function envoyer() {
+        // 2. Générer le menu temps (5min à 3h)
+        const selectTemps = document.getElementById('temps');
+        for (let i = 5; i <= 180; i += 5) {
+            let h = Math.floor(i / 60);
+            let m = i % 60;
+            let label = h > 0 ? `${h}h${m > 0 ? (m < 10 ? '0'+m : m) : '00'}` : `${m} min`;
+            selectTemps.add(new Option(label, label));
+        }
+
+        // 3. Envoyer les données
+        async function envoyerMaintenance() {
             const data = {
                 ligne: document.getElementById('ligne').value,
                 machine: document.getElementById('machine').value,
+                prob: document.getElementById('probleme').value,
+                act: document.getElementById('action').value,
+                temps: document.getElementById('temps').value,
                 nom_op: localStorage.getItem('user_nom'),
-                description: document.getElementById('desc').value,
                 id_referent: localStorage.getItem('user_id')
             };
-            if(!data.ligne || !data.machine) return alert("Remplissez la ligne et la machine.");
+
+            if(!data.ligne || !data.machine || !data.prob) {
+                alert("Merci de remplir la ligne, la machine et le problème.");
+                return;
+            }
+
+            // On fusionne Problème, Action et Temps dans la description pour le technicien
+            const payload = {
+                ligne: data.ligne,
+                machine: data.machine,
+                nom_op: data.nom_op,
+                description: `PB: ${data.prob} | ACT: ${data.act} | DURÉE: ${data.temps}`,
+                id_referent: data.id_referent
+            };
 
             const res = await fetch('/api/save_intervention', {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify(data)
+                body: JSON.stringify(payload)
             });
-            if(res.ok) { alert("Enregistré !"); window.location.href = '/'; }
+
+            if(res.ok) {
+                alert("Transmis à la maintenance !");
+                window.location.href = '/';
+            }
         }
+
         chargerLignes();
     </script>
 </body>
