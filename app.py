@@ -10,13 +10,13 @@ DB_URL = os.environ.get("DATABASE_URL")
 def get_db_connection():
     return psycopg2.connect(DB_URL, cursor_factory=RealDictCursor)
 
-# --- FONCTION D'INITIALISATION AUTOMATIQUE ---
+# --- INITIALISATION AVEC NOUVELLES COLONNES ---
 def initialisation_automatique():
-    """Crée les tables si elles n'existent pas au démarrage du serveur"""
     conn = None
     try:
         conn = get_db_connection()
         cur = conn.cursor()
+        # Création des tables
         cur.execute("""
             CREATE TABLE IF NOT EXISTS gmao_users (
                 id SERIAL PRIMARY KEY, 
@@ -46,12 +46,11 @@ def initialisation_automatique():
         """)
         conn.commit()
         cur.close()
-        print("✅ Base de données initialisée avec succès.")
+        print("✅ Base de données initialisée.")
     except Exception as e:
-        print(f"❌ Erreur lors de l'initialisation : {e}")
+        print(f"❌ Erreur initialisation : {e}")
     finally:
-        if conn:
-            conn.close()
+        if conn: conn.close()
 
 # --- ROUTES PAGES ---
 @app.route('/')
@@ -80,15 +79,13 @@ def login_gmao():
     if user: return jsonify({"status": "success", "id": user['id'], "role": user['role'], "nom": user['nom_complet']})
     return jsonify({"status": "error"}), 401
 
-# NOUVELLE ROUTE : Login sans PIN (pour les référents)
 @app.route('/api/login_sans_pin', methods=['POST'])
 def login_sans_pin():
     data = request.json
     conn = get_db_connection(); cur = conn.cursor()
     cur.execute("SELECT id, role, nom_complet FROM gmao_users WHERE username = %s", (data.get('username'),))
     user = cur.fetchone(); cur.close(); conn.close()
-    if user:
-        return jsonify({"status": "success", "id": user['id'], "role": user['role'], "nom": user['nom_complet']})
+    if user: return jsonify({"status": "success", "id": user['id'], "role": user['role'], "nom": user['nom_complet']})
     return jsonify({"status": "error"}), 404
 
 # --- API LIGNES ---
@@ -109,7 +106,7 @@ def delete_ligne(id):
     conn.commit(); cur.close(); conn.close()
     return jsonify({"status": "deleted"})
 
-# --- API INTERVENTIONS ---
+# --- API INTERVENTIONS (LIVE OPTIMIZED) ---
 @app.route('/api/save_intervention', methods=['POST'])
 def save_intervention():
     data = request.json
@@ -124,21 +121,21 @@ def save_intervention():
 @app.route('/api/historique_complet')
 def get_historique_complet():
     conn = get_db_connection(); cur = conn.cursor()
+    # Jointure pour récupérer le nom du référent même s'il change de pseudo
     cur.execute("""
-        SELECT i.*, u.nom_complet FROM interventions i
+        SELECT i.*, u.nom_complet as nom_referent 
+        FROM interventions i
         LEFT JOIN gmao_users u ON i.id_referent = u.id
         ORDER BY i.date_saisie DESC
     """)
     rows = cur.fetchall(); cur.close(); conn.close()
     return jsonify(rows)
 
-@app.route('/api/cloturer_gmao', methods=['POST'])
-def cloturer_gmao():
-    data = request.json
-    nouveau_statut = data.get('statut', 'saisi_gmao')
+@app.route('/api/update_statut/<int:id>', methods=['POST'])
+def update_statut(id):
+    # Route simplifiée pour le "Live" Admin et Technicien
     conn = get_db_connection(); cur = conn.cursor()
-    cur.execute("UPDATE interventions SET statut = %s, valide_par_tech = %s WHERE id = %s", 
-               (nouveau_statut, str(data['id_tech']), int(data['id_intervention'])))
+    cur.execute("UPDATE interventions SET statut = 'saisi_gmao' WHERE id = %s", (id,))
     conn.commit(); cur.close(); conn.close()
     return jsonify({"status": "success"})
 
@@ -149,7 +146,7 @@ def delete_inter(id):
     conn.commit(); cur.close(); conn.close()
     return jsonify({"status": "success"})
 
-# --- API EQUIPE ---
+# --- API UTILISATEURS & PIN ---
 @app.route('/api/admin/users', methods=['GET', 'POST'])
 def manage_users():
     conn = get_db_connection(); cur = conn.cursor()
@@ -158,9 +155,18 @@ def manage_users():
         cur.execute("INSERT INTO gmao_users (username, password_hash, role, nom_complet) VALUES (%s,%s,%s,%s)",
                     (d['username'], d['password'], d['role'], d['nom']))
         conn.commit()
-    cur.execute("SELECT id, username, role, nom_complet, password_hash FROM gmao_users ORDER BY role")
+    cur.execute("SELECT id, username, role, nom_complet, password_hash FROM gmao_users ORDER BY role, nom_complet")
     users = cur.fetchall(); cur.close(); conn.close()
     return jsonify(users)
+
+@app.route('/api/admin/update_pin', methods=['POST'])
+def update_pin():
+    data = request.json
+    conn = get_db_connection(); cur = conn.cursor()
+    cur.execute("UPDATE gmao_users SET password_hash = %s WHERE id = %s", 
+               (data['new_pin'], data['user_id']))
+    conn.commit(); cur.close(); conn.close()
+    return jsonify({"status": "success"})
 
 @app.route('/api/admin/users/<int:id>', methods=['DELETE'])
 def delete_user(id):
@@ -169,22 +175,23 @@ def delete_user(id):
     conn.commit(); cur.close(); conn.close()
     return jsonify({"status": "success"})
 
+# --- EXPORT ---
 @app.route('/api/export_csv')
 def export_csv():
     conn = get_db_connection(); cur = conn.cursor()
-    cur.execute("SELECT i.*, u.nom_complet as referent FROM interventions i LEFT JOIN gmao_users u ON i.id_referent = u.id")
+    cur.execute("""
+        SELECT i.*, u.nom_complet as referent 
+        FROM interventions i 
+        LEFT JOIN gmao_users u ON i.id_referent = u.id
+        ORDER BY i.date_saisie DESC
+    """)
     rows = cur.fetchall()
     output = io.StringIO()
     writer = csv.writer(output)
-    writer.writerow(['Date', 'Ligne', 'Machine', 'Referent', 'Desc', 'Statut', 'Validé par'])
+    writer.writerow(['ID', 'Date', 'Ligne', 'Machine', 'Referent', 'Technicien Source', 'Description', 'Statut'])
     for r in rows:
-        writer.writerow([r['date_saisie'], r['ligne_production'], r['machine_num'], r['referent'], r['description'], r['statut'], r['valide_par_tech']])
-    return Response(output.getvalue(), mimetype="text/csv", headers={"Content-disposition":"attachment; filename=export.csv"})
-
-@app.route('/setup_db')
-def setup_db():
-    initialisation_automatique()
-    return "Base vérifiée et mise à jour."
+        writer.writerow([r['id'], r['date_saisie'], r['ligne_production'], r['machine_num'], r['referent'], r['nom_operateur_intervenant'], r['description'], r['statut']])
+    return Response(output.getvalue(), mimetype="text/csv", headers={"Content-disposition":"attachment; filename=gmao_export.csv"})
 
 if __name__ == "__main__":
     initialisation_automatique() 
