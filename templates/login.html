@@ -5,36 +5,38 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>GMAO - Connexion</title>
     <style>
-        body { background: #0f172a; color: white; font-family: sans-serif; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; }
-        .login-container { width: 90%; max-width: 800px; text-align: center; }
-        h2 { color: #38bdf8; text-transform: uppercase; margin-bottom: 30px; font-size: 1.5rem; }
+        body { background: #0f172a; color: white; font-family: sans-serif; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; padding: 20px; }
+        .login-container { width: 100%; max-width: 900px; text-align: center; }
+        h2 { color: #38bdf8; text-transform: uppercase; margin-bottom: 30px; }
         
-        /* Grille des noms */
-        .user-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 15px; margin-bottom: 30px; }
-        .user-card { background: #1e293b; border: 2px solid #334155; padding: 20px; border-radius: 15px; cursor: pointer; transition: 0.2s; font-weight: bold; font-size: 1.1rem; }
-        .user-card:active, .user-card.selected { background: #38bdf8; border-color: white; transform: scale(0.95); }
+        /* Grille des noms style iPad */
+        .user-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 15px; margin-bottom: 30px; }
+        .user-card { background: #1e293b; border: 2px solid #334155; padding: 30px 10px; border-radius: 15px; cursor: pointer; transition: 0.3s; font-weight: bold; font-size: 1.2rem; display: flex; align-items: center; justify-content: center; min-height: 80px; }
+        .user-card:hover { border-color: #38bdf8; background: #334155; }
+        .user-card:active { transform: scale(0.95); background: #38bdf8; }
 
-        /* Section Pavé Numérique (masquée par défaut) */
-        #auth-section { background: #1e293b; padding: 30px; border-radius: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.5); max-width: 350px; margin: 0 auto; display: none; }
-        .pin-display { width: 100%; padding: 15px; margin-bottom: 20px; border-radius: 10px; border: 2px solid #334155; background: #0f172a; color: white; font-size: 1.5rem; text-align: center; }
-        
+        /* Pavé Numérique */
+        #auth-section { background: #1e293b; padding: 30px; border-radius: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.5); width: 320px; margin: 0 auto; display: none; }
+        .pin-display { width: 100%; padding: 15px; margin-bottom: 20px; border-radius: 10px; border: 2px solid #334155; background: #0f172a; color: white; font-size: 2rem; text-align: center; letter-spacing: 10px; }
         .numpad { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
         .num-btn { background: #334155; color: white; border: none; padding: 20px; border-radius: 10px; font-size: 1.5rem; font-weight: bold; cursor: pointer; }
         .num-btn:active { background: #38bdf8; }
         .num-btn.del { background: #ef4444; }
-        
-        .back-link { display: block; margin-top: 30px; color: #64748b; text-decoration: none; font-size: 1rem; }
+        .btn-ok { background: #22c55e !important; }
+
+        .btn-annuler { background: none; border: 1px solid #64748b; color: #64748b; padding: 10px; border-radius: 8px; margin-top: 20px; cursor: pointer; width: 100%; }
+        .back-link { display: block; margin-top: 50px; color: #475569; text-decoration: none; }
     </style>
 </head>
 <body>
 
     <div class="login-container">
-        <h2 id="page-title">Choisissez votre nom</h2>
+        <h2 id="page-title">Chargement des utilisateurs...</h2>
         
         <div id="user-list" class="user-grid"></div>
 
         <div id="auth-section">
-            <h3 id="selected-user-name" style="margin-top:0; color:#38bdf8;"></h3>
+            <h3 id="selected-user-name" style="margin-top:0; color:#38bdf8;">Nom</h3>
             <div class="pin-display" id="pin-view">****</div>
             <div class="numpad">
                 <button class="num-btn" onclick="pressNum('1')">1</button>
@@ -48,55 +50,74 @@
                 <button class="num-btn" onclick="pressNum('9')">9</button>
                 <button class="num-btn del" onclick="pressNum('del')">⌫</button>
                 <button class="num-btn" onclick="pressNum('0')">0</button>
-                <button class="num-btn" style="background:#22c55e" onclick="validerConnexion()">OK</button>
+                <button class="num-btn btn-ok" onclick="validerConnexion()">OK</button>
             </div>
-            <button onclick="annuler()" style="background:none; border:none; color:#64748b; margin-top:15px; cursor:pointer;">← Retour aux noms</button>
+            <button class="btn-annuler" onclick="annuler()">RETOUR</button>
         </div>
         
-        <a href="/" class="back-link">← Retour au menu principal</a>
+        <a href="/" class="back-link">Retour Menu Principal</a>
     </div>
 
     <script>
+        // Récupère le rôle dans l'URL (?role=referent ou ?role=technicien)
         const params = new URLSearchParams(window.location.search);
-        const roleCible = params.get('role') || 'technicien';
+        let roleCible = params.get('role') || 'technicien';
+        
+        // Nettoyage pour éviter les erreurs d'accentuation (ex: Référent -> referent)
+        const roleNettoye = roleCible.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+
         let selectedUser = null;
         let currentPin = "";
 
-        // 1. Charger les utilisateurs et créer les boutons
         async function chargerUsers() {
-            const res = await fetch('/api/admin/users');
-            const users = await res.json();
-            const container = document.getElementById('user-list');
-            container.innerHTML = "";
+            try {
+                const res = await fetch('/api/admin/users');
+                const users = await res.json();
+                console.log("Utilisateurs reçus :", users); // Debug dans la console F12
 
-            const filtres = users.filter(u => 
-                u.role.toLowerCase() === roleCible.toLowerCase() && 
-                u.username.toLowerCase() !== 'admin'
-            );
+                const container = document.getElementById('user-list');
+                container.innerHTML = "";
 
-            filtres.forEach(u => {
-                const card = document.createElement('div');
-                card.className = 'user-card';
-                card.innerText = u.nom_complet;
-                card.onclick = () => selectionnerUtilisateur(u);
-                container.appendChild(card);
-            });
+                // FILTRAGE SOUPLE
+                const filtres = users.filter(u => {
+                    const userRole = u.role.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+                    // On garde si le rôle correspond ET que ce n'est pas l'admin
+                    return userRole.includes(roleNettoye) && u.username.toLowerCase() !== 'admin';
+                });
+
+                if (filtres.length === 0) {
+                    document.getElementById('page-title').innerText = "Aucun " + roleCible + " trouvé.";
+                } else {
+                    document.getElementById('page-title').innerText = "Qui êtes-vous ?";
+                    filtres.forEach(u => {
+                        const card = document.createElement('div');
+                        card.className = 'user-card';
+                        card.innerText = u.nom_complet;
+                        card.onclick = () => selectionnerUtilisateur(u);
+                        container.appendChild(card);
+                    });
+                }
+            } catch (e) {
+                document.getElementById('page-title').innerText = "Erreur de connexion au serveur.";
+            }
         }
 
-        // 2. Action quand on clique sur un nom
         function selectionnerUtilisateur(user) {
             selectedUser = user;
-            
-            if(roleCible === 'referent') {
-                // Connexion immédiate pour les référents
-                validerConnexion();
+            if(roleNettoye === 'referent') {
+                validerConnexion(); // Direct pour les référents
             } else {
-                // Afficher le pavé numérique pour les techniciens
                 document.getElementById('user-list').style.display = 'none';
                 document.getElementById('page-title').style.display = 'none';
                 document.getElementById('auth-section').style.display = 'block';
                 document.getElementById('selected-user-name').innerText = user.nom_complet;
             }
+        }
+
+        function pressNum(num) {
+            if(num === 'del') currentPin = currentPin.slice(0, -1);
+            else if(currentPin.length < 4) currentPin += num;
+            document.getElementById('pin-view').innerText = currentPin.split('').map(() => '*').join('') || "****";
         }
 
         function annuler() {
@@ -108,33 +129,22 @@
             document.getElementById('auth-section').style.display = 'none';
         }
 
-        function pressNum(num) {
-            if(num === 'del') {
-                currentPin = currentPin.slice(0, -1);
-            } else {
-                if(currentPin.length < 4) currentPin += num;
-            }
-            document.getElementById('pin-view').innerText = currentPin.split('').map(() => '*').join('') || "****";
-        }
-
         async function validerConnexion() {
-            if(!selectedUser) return;
-
-            const url = (roleCible === 'referent') ? '/api/login_sans_pin' : '/login_gmao';
-            const body = { username: selectedUser.username };
-            if(roleCible !== 'referent') body.password = currentPin;
+            const url = (roleNettoye === 'referent') ? '/api/login_sans_pin' : '/login_gmao';
+            const payload = { username: selectedUser.username };
+            if(roleNettoye !== 'referent') payload.password = currentPin;
 
             const res = await fetch(url, {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify(body)
+                body: JSON.stringify(payload)
             });
 
             const data = await res.json();
             if(data.status === "success") {
                 localStorage.setItem('user_id', data.id);
                 localStorage.setItem('user_nom', data.nom);
-                window.location.href = (roleCible === 'referent') ? '/page_referent' : '/page_technicien';
+                window.location.href = (roleNettoye === 'referent') ? '/page_referent' : '/page_technicien';
             } else {
                 alert("Erreur ou Code PIN incorrect");
                 currentPin = "";
