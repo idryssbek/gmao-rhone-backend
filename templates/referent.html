@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>GMAO - Nouvelle Intervention</title>
+    <title>GMAO - Saisie Référent</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
     <style>
         :root {
@@ -17,145 +17,152 @@
         body {
             background-color: var(--bg-color);
             color: var(--text-main);
-            font-family: 'Segoe UI', system-ui, sans-serif;
+            font-family: 'Segoe UI', sans-serif;
             margin: 0;
             display: flex;
+            align-items: center;
             justify-content: center;
-            padding: 20px;
+            min-height: 100vh;
         }
 
         .container {
-            width: 100%;
-            max-width: 500px;
+            width: 95%;
+            max-width: 1000px; /* Plus large pour le mode paysage */
             background: var(--card-bg);
-            padding: 30px;
-            border-radius: 20px;
-            box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+            padding: 25px 40px;
+            border-radius: 24px;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.4);
         }
 
-        h2 {
-            color: var(--accent);
-            text-align: center;
-            font-size: 1.5rem;
-            margin-bottom: 25px;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-        }
-
-        .user-info {
-            text-align: center;
-            font-size: 0.9rem;
-            color: #94a3b8;
-            margin-bottom: 30px;
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
             border-bottom: 1px solid #334155;
-            padding-bottom: 15px;
+            margin-bottom: 25px;
+            padding-bottom: 10px;
         }
 
-        .form-group {
-            margin-bottom: 25px;
+        h2 { color: var(--accent); margin: 0; text-transform: uppercase; font-size: 1.4rem; }
+        .user-tag { background: #334155; padding: 5px 15px; border-radius: 20px; font-size: 0.9rem; }
+
+        /* Grille en deux colonnes pour tablette paysage */
+        .form-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
         }
+
+        .form-group { margin-bottom: 15px; }
 
         label {
             display: block;
-            margin-bottom: 10px;
+            margin-bottom: 8px;
             font-weight: 600;
             color: var(--accent);
-            font-size: 0.9rem;
+            font-size: 0.85rem;
+            text-transform: uppercase;
         }
 
         input, select, textarea {
             width: 100%;
-            padding: 14px;
+            padding: 16px;
             background: #0f172a;
             border: 2px solid #334155;
             border-radius: 12px;
             color: white;
-            font-size: 1rem;
-            transition: border-color 0.3s;
+            font-size: 1.1rem;
             box-sizing: border-box;
         }
 
-        input:focus, select:focus, textarea:focus {
-            border-color: var(--accent);
-            outline: none;
-        }
+        textarea { height: 110px; resize: none; }
 
-        textarea {
-            height: 80px;
-            resize: none;
+        .full-width { grid-column: span 2; }
+
+        .footer-actions {
+            margin-top: 30px;
+            display: grid;
+            grid-template-columns: 1fr 3fr; /* Bouton retour plus petit que valider */
+            gap: 20px;
+            align-items: center;
         }
 
         .btn-send {
             background: var(--success);
             color: white;
             border: none;
-            width: 100%;
-            padding: 18px;
-            border-radius: 14px;
-            font-size: 1.1rem;
+            padding: 22px;
+            border-radius: 16px;
+            font-size: 1.3rem;
             font-weight: bold;
             cursor: pointer;
-            margin-top: 20px;
-            transition: all 0.2s;
-            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.2);
+            transition: 0.2s;
+            box-shadow: 0 8px 20px rgba(16, 185, 129, 0.2);
         }
 
-        .btn-send:active {
-            transform: scale(0.97);
-        }
+        .btn-send:active { transform: scale(0.98); background: #059669; }
 
         .btn-back {
-            display: block;
             text-align: center;
-            margin-top: 20px;
             color: #64748b;
             text-decoration: none;
-            font-size: 0.9rem;
+            font-weight: 500;
+        }
+
+        /* Ajustement si jamais la tablette est remise à la verticale */
+        @media (max-width: 800px) {
+            .form-grid { grid-template-columns: 1fr; }
+            .full-width { grid-column: span 1; }
+            .footer-actions { grid-template-columns: 1fr; }
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <h2>Nouvelle Intervention</h2>
-        <div class="user-info" id="user-display">Référent : Chargement...</div>
+        <header>
+            <h2>Nouvelle Intervention</h2>
+            <div class="user-tag" id="user-display">Référent : -</div>
+        </header>
 
-        <div class="form-group">
-            <label>1. Ligne de Production</label>
-            <select id="ligne">
-                <option value="">-- Sélectionner la ligne --</option>
-            </select>
+        <div class="form-grid">
+            <div class="col">
+                <div class="form-group">
+                    <label>1. Ligne de Production</label>
+                    <select id="ligne">
+                        <option value="">-- Sélectionner --</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>2. Numéro de Machine</label>
+                    <input type="text" id="machine" placeholder="Ex: M-05">
+                </div>
+                <div class="form-group">
+                    <label>5. Temps passé</label>
+                    <select id="temps"></select>
+                </div>
+            </div>
+
+            <div class="col">
+                <div class="form-group">
+                    <label>3. Problème constaté</label>
+                    <textarea id="probleme" placeholder="Description du défaut..."></textarea>
+                </div>
+                <div class="form-group">
+                    <label>4. Action réalisée</label>
+                    <textarea id="action" placeholder="Dépannage effectué..."></textarea>
+                </div>
+            </div>
         </div>
 
-        <div class="form-group">
-            <label>2. Numéro de Machine</label>
-            <input type="text" id="machine" placeholder="Ex: M-05, Presse-02...">
+        <div class="footer-actions">
+            <a href="/" class="btn-back">ANNULER</a>
+            <button class="btn-send" onclick="envoyerMaintenance()">ENVOYER À LA MAINTENANCE</button>
         </div>
-
-        <div class="form-group">
-            <label>3. Problème constaté</label>
-            <textarea id="probleme" placeholder="Quel est le défaut ?"></textarea>
-        </div>
-
-        <div class="form-group">
-            <label>4. Action réalisée</label>
-            <textarea id="action" placeholder="Qu'avez-vous fait ?"></textarea>
-        </div>
-
-        <div class="form-group">
-            <label>5. Temps passé</label>
-            <select id="temps"></select>
-        </div>
-
-        <button class="btn-send" onclick="envoyerMaintenance()">ENVOYER À LA MAINTENANCE</button>
-        
-        <a href="/" class="btn-back">Annuler et retour</a>
     </div>
 
     <script>
-        // Affichage utilisateur
         document.getElementById('user-display').innerText = "Référent : " + (localStorage.getItem('user_nom') || "Utilisateur");
 
-        // 1. Charger les lignes dynamiquement
         async function chargerLignes() {
             try {
                 const res = await fetch('/api/lignes');
@@ -167,7 +174,6 @@
             } catch (e) { console.error("Erreur lignes:", e); }
         }
 
-        // 2. Générer le menu temps (5min à 3h)
         const selectTemps = document.getElementById('temps');
         for (let i = 5; i <= 180; i += 5) {
             let h = Math.floor(i / 60);
@@ -176,7 +182,6 @@
             selectTemps.add(new Option(label, label));
         }
 
-        // 3. Envoyer les données
         async function envoyerMaintenance() {
             const data = {
                 ligne: document.getElementById('ligne').value,
@@ -189,11 +194,10 @@
             };
 
             if(!data.ligne || !data.machine || !data.prob) {
-                alert("Merci de remplir la ligne, la machine et le problème.");
+                alert("Erreur : Ligne, Machine et Problème sont obligatoires.");
                 return;
             }
 
-            // On fusionne Problème, Action et Temps dans la description pour le technicien
             const payload = {
                 ligne: data.ligne,
                 machine: data.machine,
@@ -209,7 +213,7 @@
             });
 
             if(res.ok) {
-                alert("Transmis à la maintenance !");
+                alert("✅ Transmis avec succès !");
                 window.location.href = '/';
             }
         }
