@@ -10,13 +10,12 @@ DB_URL = os.environ.get("DATABASE_URL")
 def get_db_connection():
     return psycopg2.connect(DB_URL, cursor_factory=RealDictCursor)
 
-# --- INITIALISATION AVEC NOUVELLES COLONNES ---
+# --- INITIALISATION DE LA BASE ---
 def initialisation_automatique():
     conn = None
     try:
         conn = get_db_connection()
         cur = conn.cursor()
-        # Création des tables
         cur.execute("""
             CREATE TABLE IF NOT EXISTS gmao_users (
                 id SERIAL PRIMARY KEY, 
@@ -41,12 +40,12 @@ def initialisation_automatique():
                 valide_par_tech TEXT
             );
             INSERT INTO gmao_users (username, password_hash, role, nom_complet) 
-            VALUES ('Admin','1234','admin','Admin') 
+            VALUES ('Admin','1234','admin','Administrateur') 
             ON CONFLICT DO NOTHING;
         """)
         conn.commit()
         cur.close()
-        print("✅ Base de données initialisée.")
+        print("✅ Base de données initialisée et prête.")
     except Exception as e:
         print(f"❌ Erreur initialisation : {e}")
     finally:
@@ -106,22 +105,24 @@ def delete_ligne(id):
     conn.commit(); cur.close(); conn.close()
     return jsonify({"status": "deleted"})
 
-# --- API INTERVENTIONS (LIVE OPTIMIZED) ---
+# --- API INTERVENTIONS ---
+
 @app.route('/api/save_intervention', methods=['POST'])
 def save_intervention():
     data = request.json
+    # Si le technicien crée lui-même, on peut forcer le statut
+    statut = data.get('statut', 'en_attente')
     conn = get_db_connection(); cur = conn.cursor()
     cur.execute("""
         INSERT INTO interventions (ligne_production, machine_num, nom_operateur_intervenant, description, id_referent, statut)
-        VALUES (%s, %s, %s, %s, %s, 'en_attente')
-    """, (data['ligne'], data['machine'], data['nom_op'], data['description'], data['id_referent']))
+        VALUES (%s, %s, %s, %s, %s, %s)
+    """, (data['ligne'], data['machine'], data['nom_op'], data['description'], data['id_referent'], statut))
     conn.commit(); cur.close(); conn.close()
     return jsonify({"status": "success"})
 
 @app.route('/api/historique_complet')
 def get_historique_complet():
     conn = get_db_connection(); cur = conn.cursor()
-    # Jointure pour récupérer le nom du référent même s'il change de pseudo
     cur.execute("""
         SELECT i.*, u.nom_complet as nom_referent 
         FROM interventions i
@@ -131,9 +132,24 @@ def get_historique_complet():
     rows = cur.fetchall(); cur.close(); conn.close()
     return jsonify(rows)
 
+# ROUTE POUR LE BOUTON VALIDER (TECH & ADMIN)
+@app.route('/api/cloturer_gmao', methods=['POST'])
+def cloturer_gmao():
+    data = request.json
+    inter_id = data.get('id_intervention')
+    tech_id = data.get('id_tech')
+    conn = get_db_connection(); cur = conn.cursor()
+    # On met à jour le statut et on peut noter quel tech a validé
+    cur.execute("""
+        UPDATE interventions 
+        SET statut = 'saisi_gmao', valide_par_tech = %s 
+        WHERE id = %s
+    """, (str(tech_id), inter_id))
+    conn.commit(); cur.close(); conn.close()
+    return jsonify({"status": "success"})
+
 @app.route('/api/update_statut/<int:id>', methods=['POST'])
-def update_statut(id):
-    # Route simplifiée pour le "Live" Admin et Technicien
+def update_statut_url(id):
     conn = get_db_connection(); cur = conn.cursor()
     cur.execute("UPDATE interventions SET statut = 'saisi_gmao' WHERE id = %s", (id,))
     conn.commit(); cur.close(); conn.close()
@@ -188,10 +204,15 @@ def export_csv():
     rows = cur.fetchall()
     output = io.StringIO()
     writer = csv.writer(output)
-    writer.writerow(['ID', 'Date', 'Ligne', 'Machine', 'Referent', 'Technicien Source', 'Description', 'Statut'])
+    writer.writerow(['ID', 'Date', 'Ligne', 'Machine', 'Createur/Ref', 'Desc/Action', 'Statut'])
     for r in rows:
-        writer.writerow([r['id'], r['date_saisie'], r['ligne_production'], r['machine_num'], r['referent'], r['nom_operateur_intervenant'], r['description'], r['statut']])
-    return Response(output.getvalue(), mimetype="text/csv", headers={"Content-disposition":"attachment; filename=gmao_export.csv"})
+        writer.writerow([r['id'], r['date_saisie'], r['ligne_production'], r['machine_num'], r['nom_operateur_intervenant'], r['description'], r['statut']])
+    
+    return Response(
+        output.getvalue(),
+        mimetype="text/csv",
+        headers={"Content-disposition": "attachment; filename=gmao_export.csv"}
+    )
 
 if __name__ == "__main__":
     initialisation_automatique() 
