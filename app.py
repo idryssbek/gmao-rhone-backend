@@ -121,12 +121,16 @@ def get_historique_complet():
     rows = cur.fetchall(); cur.close(); conn.close()
     return jsonify(rows)
 
+# MISE À JOUR : Route flexible pour l'admin et les techniciens
 @app.route('/api/cloturer_gmao', methods=['POST'])
 def cloturer_gmao():
     data = request.json
+    # On récupère le statut envoyé, sinon par défaut 'saisi_gmao'
+    nouveau_statut = data.get('statut', 'saisi_gmao')
+    
     conn = get_db_connection(); cur = conn.cursor()
-    cur.execute("UPDATE interventions SET statut = 'saisi_gmao', valide_par_tech = %s WHERE id = %s", 
-               (str(data['id_tech']), int(data['id_intervention'])))
+    cur.execute("UPDATE interventions SET statut = %s, valide_par_tech = %s WHERE id = %s", 
+               (nouveau_statut, str(data['id_tech']), int(data['id_intervention'])))
     conn.commit(); cur.close(); conn.close()
     return jsonify({"status": "success"})
 
@@ -144,7 +148,7 @@ def manage_users():
     if request.method == 'POST':
         d = request.json
         cur.execute("INSERT INTO gmao_users (username, password_hash, role, nom_complet) VALUES (%s,%s,%s,%s)",
-                   (d['username'], d['password'], d['role'], d['nom']))
+                    (d['username'], d['password'], d['role'], d['nom']))
         conn.commit()
     cur.execute("SELECT id, username, role, nom_complet, password_hash FROM gmao_users ORDER BY role")
     users = cur.fetchall(); cur.close(); conn.close()
@@ -176,5 +180,5 @@ def setup_db():
 
 # --- LANCEMENT DU SERVEUR ---
 if __name__ == "__main__":
-    initialisation_automatique() # Lance la création des tables dès le démarrage
+    initialisation_automatique() 
     app.run(host='0.0.0.0', port=int(os.environ.get("PORT", 10000)))
