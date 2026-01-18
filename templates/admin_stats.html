@@ -1,0 +1,125 @@
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<style>
+    .stats-container { display: grid; grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); gap: 20px; padding: 20px; }
+    .chart-card { background: #1e293b; padding: 20px; border-radius: 15px; border: 1px solid #334155; text-align: center; }
+    .resume-box { background: rgba(56, 189, 248, 0.1); border-left: 4px solid #38bdf8; padding: 15px; margin-top: 15px; border-radius: 8px; font-size: 0.9rem; text-align: left; line-height: 1.5; }
+    canvas { max-height: 300px; margin: auto; }
+    h3 { color: #38bdf8; margin-bottom: 20px; text-transform: uppercase; font-size: 1rem; }
+    b { color: #22c55e; }
+</style>
+
+<div class="stats-container">
+    <div class="chart-card">
+        <h3>Interventions par Ligne</h3>
+        <canvas id="chartLignesInter"></canvas>
+        <div id="resume-lignes-inter" class="resume-box"></div>
+    </div>
+
+    <div class="chart-card">
+        <h3>Temps d'arrêt par Ligne (min)</h3>
+        <canvas id="chartLignesTemps"></canvas>
+        <div id="resume-lignes-temps" class="resume-box"></div>
+    </div>
+
+    <div class="chart-card">
+        <h3>Alertes par Référent</h3>
+        <canvas id="chartRefInter"></canvas>
+        <div id="resume-ref-inter" class="resume-box"></div>
+    </div>
+
+    <div class="chart-card">
+        <h3>Temps géré par Référent (min)</h3>
+        <canvas id="chartRefTemps"></canvas>
+        <div id="resume-ref-temps" class="resume-box"></div>
+    </div>
+</div>
+
+<script>
+let charts = {};
+
+async function initStats() {
+    const res = await fetch('/api/historique_complet');
+    const data = await res.json();
+    
+    // 1. Filtrer pour exclure les techniciens (on garde ceux qui ont un nom_referent)
+    const filteredData = data.filter(i => i.nom_referent && i.nom_referent !== "");
+
+    // --- PRÉPARATION DES DONNÉES ---
+    
+    // Par Ligne
+    const statsLignes = {};
+    // Par Référent
+    const statsRefs = {};
+
+    filteredData.forEach(i => {
+        // Extraction du temps (on suppose que c'est stocké en minutes ou extrait de la description "Durée: X min")
+        let temps = 0;
+        const match = i.description ? i.description.match(/Durée: (\d+)/) : null;
+        if(match) temps = parseInt(match[1]);
+
+        // Stats Lignes
+        if(!statsLignes[i.ligne_production]) statsLignes[i.ligne_production] = { count: 0, time: 0 };
+        statsLignes[i.ligne_production].count++;
+        statsLignes[i.ligne_production].time += temps;
+
+        // Stats Référents
+        const ref = i.nom_referent;
+        if(!statsRefs[ref]) statsRefs[ref] = { count: 0, time: 0 };
+        statsRefs[ref].count++;
+        statsRefs[ref].time += temps;
+    });
+
+    // --- GÉNÉRATION DES GRAPHIQUES ---
+    
+    createPieChart('chartLignesInter', Object.keys(statsLignes), Object.values(statsLignes).map(v => v.count), 'Interventions');
+    createPieChart('chartLignesTemps', Object.keys(statsLignes), Object.values(statsLignes).map(v => v.time), 'Minutes');
+    createPieChart('chartRefInter', Object.keys(statsRefs), Object.values(statsRefs).map(v => v.count), 'Interventions');
+    createPieChart('chartRefTemps', Object.keys(statsRefs), Object.values(statsRefs).map(v => v.time), 'Minutes');
+
+    // --- GÉNÉRATION DES RÉSUMÉS ---
+    
+    generateResumeLignes(statsLignes);
+    generateResumeRefs(statsRefs);
+}
+
+function createPieChart(id, labels, data, labelName) {
+    if(charts[id]) charts[id].destroy(); // Reset si refresh
+    const ctx = document.getElementById(id).getContext('2d');
+    charts[id] = new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+            labels: labels,
+            datasets: [{
+                label: labelName,
+                data: data,
+                backgroundColor: ['#38bdf8', '#22c55e', '#f59e0b', '#ef4444', '#a855f7', '#ec4899', '#eab308'],
+                borderWidth: 0
+            }]
+        },
+        options: { plugins: { legend: { position: 'bottom', labels: { color: 'white' } } } }
+    });
+}
+
+function generateResumeLignes(stats) {
+    const entries = Object.entries(stats);
+    const topInter = entries.reduce((a, b) => a[1].count > b[1].count ? a : b);
+    const topTemps = entries.reduce((a, b) => a[1].time > b[1].time ? a : b);
+    
+    document.getElementById('resume-lignes-inter').innerHTML = `La ligne <b>${topInter[0]}</b> est la plus sollicitée avec <b>${topInter[1].count}</b> interventions.`;
+    document.getElementById('resume-lignes-temps').innerHTML = `La ligne <b>${topTemps[0]}</b> totalise le plus d'arrêt : <b>${topTemps[1].time} min</b>.`;
+}
+
+function generateResumeRefs(stats) {
+    const entries = Object.entries(stats);
+    const topInter = entries.reduce((a, b) => a[1].count > b[1].count ? a : b);
+    const topTemps = entries.reduce((a, b) => a[1].time > b[1].time ? a : b);
+
+    document.getElementById('resume-ref-inter').innerHTML = `<b>${topInter[0]}</b> est le référent le plus actif (<b>${topInter[1].count}</b> alertes).`;
+    document.getElementById('resume-ref-temps').innerHTML = `<b>${topTemps[0]}</b> a déclaré le plus de temps d'intervention (<b>${topTemps[1].time} min</b>).`;
+}
+
+window.onload = initStats;
+// Refresh automatique toutes les 30 secondes
+setInterval(initStats, 30000);
+</script>
