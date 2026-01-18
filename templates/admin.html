@@ -24,6 +24,27 @@
         th { text-align: left; color: var(--accent); font-size: 0.75rem; text-transform: uppercase; padding: 12px; border-bottom: 2px solid var(--border); }
         td { padding: 12px; border-bottom: 1px solid #222; font-size: 0.9rem; }
         
+        /* Style spécifique pour la description */
+        .td-desc { 
+            max-width: 200px; 
+            overflow: hidden; 
+            text-overflow: ellipsis; 
+            white-space: nowrap; 
+            color: #94a3b8;
+            cursor: help;
+        }
+
+        /* Bouton Menu Principal */
+        .btn-home-floating {
+            position: fixed; bottom: 25px; left: 245px; /* Décalé pour ne pas chevaucher la sidebar */
+            background: rgba(30, 41, 59, 0.8); color: var(--accent);
+            border: 1px solid var(--accent); padding: 10px 18px;
+            border-radius: 10px; text-decoration: none; font-weight: bold;
+            backdrop-filter: blur(10px); z-index: 9999; transition: 0.3s;
+            display: flex; align-items: center; gap: 8px; font-size: 0.8rem;
+        }
+        .btn-home-floating:hover { background: var(--accent); color: #0d1117; transform: translateY(-3px); }
+
         /* Expansion Logic */
         .table-wrapper { max-height: 380px; overflow: hidden; position: relative; transition: max-height 0.4s ease; }
         .table-wrapper.expanded { max-height: 2000px; overflow-y: auto; }
@@ -43,6 +64,8 @@
     </style>
 </head>
 <body>
+
+    <a href="/" class="btn-home-floating">🏠 MENU PRINCIPAL</a>
 
     <div class="sidebar">
         <h2 style="color:var(--accent); font-size: 1.2rem;">GMAO ADMIN</h2>
@@ -67,6 +90,7 @@
                                 <th>Date/Heure</th>
                                 <th>Ligne</th>
                                 <th>Machine</th>
+                                <th>Description</th>
                                 <th>Référent</th>
                                 <th>Statut</th>
                                 <th>Action</th>
@@ -127,6 +151,7 @@
 
         function log(msg, err=false) {
             const c = document.getElementById('debug-console');
+            if(!c) return;
             c.innerHTML += `<div style="color:${err?'#ff4444':'#0f0'}">[${new Date().toLocaleTimeString()}] ${msg}</div>`;
             c.scrollTop = c.scrollHeight;
         }
@@ -153,7 +178,7 @@
             }
         }
 
-        // --- LIVE HISTORIQUE ---
+        // --- LIVE HISTORIQUE AVEC DESCRIPTION ---
         async function loadInterLive() {
             try {
                 const res = await fetch('/api/historique_complet');
@@ -163,6 +188,7 @@
                         <td>${new Date(i.date_saisie).toLocaleString('fr-FR', {day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit'})}</td>
                         <td><b>${i.ligne_production}</b></td>
                         <td>${i.machine_num}</td>
+                        <td class="td-desc" title="${i.description || ''}">${i.description || '---'}</td>
                         <td style="color:var(--accent)">${i.nom_referent || '---'}</td>
                         <td><span style="color:${i.statut === 'en_attente' ? '#f59e0b':'#22c55e'}">${i.statut === 'en_attente' ? '⏳ ATTENTE':'✅ SAISI'}</span></td>
                         <td>
@@ -180,7 +206,6 @@
             } catch (e) { log("Erreur Sync Live", true); }
         }
 
-        // --- GESTION PIN ---
         async function updatePin(userId, newPin) {
             if(newPin.length !== 4) return;
             await fetch('/api/admin/update_pin', {
@@ -205,10 +230,14 @@
         }
 
         async function addUser() {
+            const nomVal = document.getElementById('u-nom').value;
+            const pinVal = document.getElementById('u-pin').value;
+            if(!nomVal || !pinVal) return alert("Remplir Nom et PIN");
+            
             const d = { 
-                nom: document.getElementById('u-nom').value, 
-                username: document.getElementById('u-nom').value.replace(/\s+/g, '').toLowerCase(), 
-                password: document.getElementById('u-pin').value, 
+                nom: nomVal, 
+                username: nomVal.replace(/\s+/g, '').toLowerCase(), 
+                password: pinVal, 
                 role: document.getElementById('u-role').value 
             };
             await fetch('/api/admin/users', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(d) });
@@ -216,14 +245,14 @@
             document.getElementById('u-nom').value = ""; document.getElementById('u-pin').value = "";
         }
 
-        // --- ACTIONS ---
         async function changeStatut(id) {
             await fetch(`/api/update_statut/${id}`, { method: 'POST' });
             loadInterLive();
         }
 
-        async function delInter(id) { if(confirm("Supprimer ?")) { await fetch(`/api/admin/delete_inter/${id}`, {method:'DELETE'}); loadInterLive(); } }
-        async function deleteUser(id) { await fetch(`/api/admin/users/${id}`, {method:'DELETE'}); loadUsers(); }
+        async function delInter(id) { if(confirm("Supprimer cette intervention ?")) { await fetch(`/api/admin/delete_inter/${id}`, {method:'DELETE'}); loadInterLive(); } }
+        async function deleteUser(id) { if(confirm("Supprimer cet utilisateur ?")) { await fetch(`/api/admin/users/${id}`, {method:'DELETE'}); loadUsers(); } }
+        
         async function loadLignes() {
             const res = await fetch('/api/lignes');
             const data = await res.json();
@@ -234,17 +263,19 @@
                 </div>
             `).join('');
         }
+        
         async function addLigne() {
             const nom = document.getElementById('l-nom').value;
+            if(!nom) return;
             await fetch('/api/lignes', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ nom }) });
             document.getElementById('l-nom').value = ""; loadLignes();
         }
+        
         async function deleteLigne(id) { await fetch(`/api/lignes/${id}`, { method: 'DELETE' }); loadLignes(); }
 
-        // INITIALISATION & INTERVALLES
         window.onload = () => {
             loadInterLive();
-            setInterval(loadInterLive, 2000); // 2 secondes pour le Live
+            setInterval(loadInterLive, 2000); 
         };
     </script>
 </body>
