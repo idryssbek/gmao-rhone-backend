@@ -67,13 +67,17 @@ def page_technicien(): return render_template('technicien.html')
 @app.route('/admin')
 def page_admin(): return render_template('admin.html')
 
+# NOUVELLE ROUTE POUR LES STATS
+@app.route('/admin/stats')
+def page_stats(): return render_template('admin_stats.html')
+
 # --- API AUTH ---
 @app.route('/login_gmao', methods=['POST'])
 def login_gmao():
     data = request.json
     conn = get_db_connection(); cur = conn.cursor()
     cur.execute("SELECT id, role, nom_complet FROM gmao_users WHERE username = %s AND password_hash = %s", 
-               (data.get('username'), data.get('password')))
+                (data.get('username'), data.get('password')))
     user = cur.fetchone(); cur.close(); conn.close()
     if user: return jsonify({"status": "success", "id": user['id'], "role": user['role'], "nom": user['nom_complet']})
     return jsonify({"status": "error"}), 401
@@ -110,16 +114,16 @@ def delete_ligne(id):
 @app.route('/api/save_intervention', methods=['POST'])
 def save_intervention():
     data = request.json
-    # Si le technicien crée lui-même, on peut forcer le statut
     statut = data.get('statut', 'en_attente')
     conn = get_db_connection(); cur = conn.cursor()
     cur.execute("""
         INSERT INTO interventions (ligne_production, machine_num, nom_operateur_intervenant, description, id_referent, statut)
         VALUES (%s, %s, %s, %s, %s, %s)
-    """, (data['ligne'], data['machine'], data['nom_op'], data['description'], data['id_referent'], statut))
+    """, (data['ligne'], data['machine'], data['nom_op'], data['description'], data.get('id_referent'), statut))
     conn.commit(); cur.close(); conn.close()
     return jsonify({"status": "success"})
 
+# MISE À JOUR : On s'assure que le nom_referent est bien récupéré pour les graphiques
 @app.route('/api/historique_complet')
 def get_historique_complet():
     conn = get_db_connection(); cur = conn.cursor()
@@ -132,14 +136,12 @@ def get_historique_complet():
     rows = cur.fetchall(); cur.close(); conn.close()
     return jsonify(rows)
 
-# ROUTE POUR LE BOUTON VALIDER (TECH & ADMIN)
 @app.route('/api/cloturer_gmao', methods=['POST'])
 def cloturer_gmao():
     data = request.json
     inter_id = data.get('id_intervention')
     tech_id = data.get('id_tech')
     conn = get_db_connection(); cur = conn.cursor()
-    # On met à jour le statut et on peut noter quel tech a validé
     cur.execute("""
         UPDATE interventions 
         SET statut = 'saisi_gmao', valide_par_tech = %s 
@@ -204,9 +206,9 @@ def export_csv():
     rows = cur.fetchall()
     output = io.StringIO()
     writer = csv.writer(output)
-    writer.writerow(['ID', 'Date', 'Ligne', 'Machine', 'Createur/Ref', 'Desc/Action', 'Statut'])
+    writer.writerow(['ID', 'Date', 'Ligne', 'Machine', 'Référent', 'Description', 'Statut'])
     for r in rows:
-        writer.writerow([r['id'], r['date_saisie'], r['ligne_production'], r['machine_num'], r['nom_operateur_intervenant'], r['description'], r['statut']])
+        writer.writerow([r['id'], r['date_saisie'], r['ligne_production'], r['machine_num'], r['nom_referent'], r['description'], r['statut']])
     
     return Response(
         output.getvalue(),
