@@ -23,7 +23,7 @@
         .form-card { background: var(--card); padding: 20px; border-radius: 15px; max-width: 500px; margin: 0 auto; box-shadow: 0 10px 25px rgba(0,0,0,0.2); }
         label { display: block; margin: 12px 0 5px; color: var(--accent); font-size: 0.75rem; text-transform: uppercase; font-weight: bold; }
         select, input, textarea { width: 100%; padding: 14px; border-radius: 10px; border: 2px solid #334155; background: #0f172a; color: white; font-size: 1rem; box-sizing: border-box; }
-        .btn-valider { width: 100%; padding: 18px; border-radius: 12px; border: none; background: var(--success); color: white; font-weight: bold; font-size: 1.1rem; cursor: pointer; margin-top: 15px; }
+        .btn-valider { width: 100%; padding: 18px; border-radius: 12px; border: none; background: var(--warning); color: white; font-weight: bold; font-size: 1.1rem; cursor: pointer; margin-top: 15px; }
 
         /* Liste Interventions */
         .inter-item { background: var(--card); padding: 15px; border-radius: 12px; margin-bottom: 12px; border-left: 6px solid #475569; position: relative; }
@@ -51,7 +51,7 @@
     <div class="tabs">
         <button id="btn-tab-todo" class="tab-btn active" onclick="switchTab('todo')">À VALIDER <span id="count-todo"></span></button>
         <button id="btn-tab-saisie" class="tab-btn" onclick="switchTab('saisie')">SAISIE DIRECTE</button>
-        <button id="btn-tab-histo" class="tab-btn" onclick="switchTab('historique')">HISTORIQUE</button>
+        <button id="btn-tab-historique" class="tab-btn" onclick="switchTab('historique')">HISTORIQUE</button>
     </div>
 
     <div id="todo" class="tab-content active">
@@ -75,7 +75,7 @@
             <label>Travaux réalisés</label>
             <textarea id="desc-input" placeholder="Décrivez votre intervention..."></textarea>
 
-            <button class="btn-valider" onclick="envoyerIntervention()">ENREGISTRER GMAO</button>
+            <button class="btn-valider" onclick="envoyerIntervention()">ENREGISTRER (À VALIDER GMAO)</button>
         </div>
     </div>
 
@@ -119,7 +119,7 @@
                         <div class="inter-item statut-en_attente">
                             <div class="item-header">
                                 <span>${new Date(i.date_saisie).toLocaleString('fr-FR', {day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit'})}</span>
-                                <span class="badge-ref">Réf: ${i.nom_operateur_intervenant}</span>
+                                <span class="badge-ref">Émetteur: ${i.nom_referent || i.nom_operateur_intervenant || 'N/C'}</span>
                             </div>
                             <div class="item-title">${i.ligne_production} - ${i.machine_num}</div>
                             <div class="item-desc">${i.description}</div>
@@ -144,7 +144,7 @@
                         </div>
                         <div class="item-title">${i.ligne_production} - ${i.machine_num}</div>
                         <div class="item-desc">${i.description}</div>
-                        <div style="font-size:0.75rem; color:var(--accent)">Emetteur: ${i.nom_operateur_intervenant}</div>
+                        <div style="font-size:0.75rem; color:var(--accent)">Émetteur: ${i.nom_referent || i.nom_operateur_intervenant || 'N/C'}</div>
                     </div>
                 `).join('');
 
@@ -177,17 +177,20 @@
                 method: 'POST',
                 headers: {'Content-Type': 'application/json'},
                 body: JSON.stringify({
-                    ligne: ligne, machine: machine, nom_op: techNom,
+                    ligne: ligne, 
+                    machine: machine, 
+                    nom_op: techNom,
                     description: `${desc} (Durée: ${temps || 0} min)`,
                     id_referent: techId,
-                    statut: 'saisi_gmao' // Directement validé
+                    statut: 'en_attente' // MODIFIÉ : Enregistré en attente pour forcer la validation manuelle
                 })
             });
 
             if(res.ok) {
-                alert("Enregistré !");
+                alert("Intervention enregistrée ! Pensez à la valider dans l'onglet 'À VALIDER' une fois saisie en GMAO.");
                 document.getElementById('machine-input').value = "";
                 document.getElementById('desc-input').value = "";
+                document.getElementById('temps-input').value = "";
                 switchTab('todo');
             }
         }
