@@ -6,52 +6,137 @@
     <title>GMAO - Accueil</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
     <style>
+        :root {
+            --bg-dark: #0f172a;
+            --card-bg: #1e293b;
+            --text-main: #f1f5f9;
+            --text-dim: #94a3b8;
+            --color-ref: #10b981; /* Vert émeraude */
+            --color-tech: #38bdf8; /* Bleu ciel */
+        }
+
+        body {
+            background-color: var(--bg-dark);
+            font-family: 'Inter', sans-serif;
+            margin: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+        }
+
+        .main-container {
+            width: 100%;
+            max-width: 900px;
+            padding: 20px;
+            text-align: center;
+        }
+
+        h1 {
+            color: white;
+            font-size: 1.2rem;
+            letter-spacing: 5px;
+            text-transform: uppercase;
+            margin-bottom: 60px;
+            font-weight: 300;
+        }
+
         .menu-grid {
             display: grid;
             grid-template-columns: 1fr 1fr;
-            gap: 20px;
-            padding: 20px;
-            max-width: 800px;
-            margin: 0 auto;
+            gap: 30px;
         }
+
+        /* Style des Cartes de sélection */
         .btn-access {
-            height: 200px;
-            border-radius: 15px;
-            border: none;
-            font-size: 1.5rem;
-            font-weight: bold;
+            height: 250px;
+            background: var(--card-bg);
+            border: 1px solid #334155;
+            border-radius: 16px;
             cursor: pointer;
-            transition: transform 0.2s;
-            color: white;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
             display: flex;
             flex-direction: column;
             justify-content: center;
             align-items: center;
-            gap: 15px;
+            position: relative;
+            overflow: hidden;
         }
-        .btn-referent { background: #10b981; } /* Vert */
-        .btn-technicien { background: #38bdf8; } /* Bleu */
-        .btn-access:active { transform: scale(0.95); }
-        .icon { font-size: 3rem; }
+
+        /* Ligne de couleur sur le côté pour le rappel de rôle */
+        .btn-access::before {
+            content: "";
+            position: absolute;
+            left: 0;
+            top: 0;
+            height: 100%;
+            width: 6px;
+            transition: width 0.3s;
+        }
+
+        /* Section RÉFÉRENT */
+        .btn-referent::before { background: var(--color-ref); }
+        .btn-referent .role-title { color: var(--color-ref); }
+        .btn-referent:hover { 
+            border-color: var(--color-ref); 
+            background: rgba(16, 185, 129, 0.05); 
+            transform: translateY(-5px);
+        }
+
+        /* Section TECHNICIEN */
+        .btn-technicien::before { background: var(--color-tech); }
+        .btn-technicien .role-title { color: var(--color-tech); }
+        .btn-technicien:hover { 
+            border-color: var(--color-tech); 
+            background: rgba(56, 189, 248, 0.05); 
+            transform: translateY(-5px);
+        }
+
+        .role-title {
+            font-size: 1.6rem;
+            font-weight: 800;
+            letter-spacing: 2px;
+            margin-bottom: 10px;
+            text-transform: uppercase;
+        }
+
+        .role-desc {
+            font-size: 0.75rem;
+            color: var(--text-dim);
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            font-weight: 500;
+        }
+
+        .btn-access:active { transform: scale(0.98); }
+
+        .footer-tag {
+            color: #334155;
+            margin-top: 80px;
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            font-weight: bold;
+        }
     </style>
 </head>
 <body>
-    <div class="main-container" style="text-align: center; margin-top: 50px;">
-        <h1 style="color: white; margin-bottom: 40px;">SÉLECTIONNEZ VOTRE ESPACE</h1>
+    <div class="main-container">
+        <h1>SÉLECTIONNEZ VOTRE ESPACE</h1>
         
         <div class="menu-grid">
             <button class="btn-access btn-referent" onclick="window.location.href='/login?role=referent'">
-                <span class="icon">📋</span>
-                <span>RÉFÉRENT</span>
+                <span class="role-title">RÉFÉRENT</span>
+                <span class="role-desc">Validation & Administration</span>
             </button>
 
             <button class="btn-access btn-technicien" onclick="window.location.href='/login?role=technicien'">
-                <span class="icon">🔧</span>
-                <span>TECHNICIEN</span>
+                <span class="role-title">TECHNICIEN</span>
+                <span class="role-desc">Saisie d'interventions</span>
             </button>
         </div>
 
-        <p style="color: #444; margin-top: 50px; font-size: 0.8rem;">GMAO Interne - Accès sécurisé</p>
+        <p class="footer-tag">GMAO - SYSTÈME DE GESTION INDUSTRIELLE</p>
     </div>
 </body>
 </html>
