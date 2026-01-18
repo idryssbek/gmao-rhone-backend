@@ -19,7 +19,7 @@
             min-height: 100vh; padding: 20px; overflow: hidden;
         }
 
-        .login-container { width: 100%; max-width: 1000px; text-align: center; }
+        .login-container { width: 100%; max-width: 1000px; text-align: center; padding-bottom: 80px; }
 
         h2 { font-weight: 600; text-transform: uppercase; color: var(--accent); margin-bottom: 40px; font-size: 1.5rem; letter-spacing: 1px; }
 
@@ -51,7 +51,6 @@
         .pin-header h1 { font-size: 1.6rem; margin-bottom: 10px; }
         .pin-header p { color: #94a3b8; font-size: 1rem; }
 
-        /* Les 4 Cercles iPhone */
         .pin-dots { 
             display: flex; justify-content: center; gap: 25px; margin-bottom: 50px; 
         }
@@ -61,7 +60,7 @@
         }
         .dot.filled { background: var(--accent); box-shadow: 0 0 15px var(--accent); }
 
-        /* Pavé Numérique Circulaire */
+        /* Pavé Numérique */
         .numpad { 
             display: grid; grid-template-columns: repeat(3, 1fr); 
             gap: 20px; width: 280px; margin: 0 auto; 
@@ -75,6 +74,24 @@
         .num-btn:active { background: white; color: black; }
         .num-btn.special { border: none; background: transparent; font-size: 1rem; color: #94a3b8; }
 
+        /* BOUTON RETOUR MENU */
+        .btn-home {
+            position: fixed; bottom: 30px;
+            background: rgba(30, 41, 59, 0.95);
+            color: var(--accent);
+            border: 1px solid var(--accent);
+            padding: 12px 25px;
+            border-radius: 50px;
+            text-decoration: none;
+            font-weight: bold;
+            display: flex; align-items: center; gap: 10px;
+            transition: 0.3s;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.4);
+            backdrop-filter: blur(5px);
+            z-index: 1000;
+        }
+        .btn-home:hover { background: var(--accent); color: var(--bg); }
+
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
         @keyframes slideUp { from { transform: translateY(30px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
         @keyframes shake { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-10px); } 75% { transform: translateX(10px); } }
@@ -84,7 +101,7 @@
 <body>
 
     <div class="login-container">
-        <h2 id="page-title">Système GMAO</h2>
+        <h2 id="page-title">Chargement des utilisateurs...</h2>
         
         <div id="user-list" class="user-grid"></div>
 
@@ -118,6 +135,10 @@
         </div>
     </div>
 
+    <a href="/" class="btn-home">
+        🏠 MENU PRINCIPAL
+    </a>
+
     <script>
         const params = new URLSearchParams(window.location.search);
         const roleCible = params.get('role') || 'technicien';
@@ -133,6 +154,8 @@
                 u.role.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").includes(roleCible) 
                 && u.username.toLowerCase() !== 'admin'
             );
+
+            document.getElementById('page-title').innerText = `Espace ${roleCible.toUpperCase()}`;
 
             filtres.forEach(u => {
                 const card = document.createElement('div');
@@ -170,7 +193,6 @@
             }
             updateDots();
 
-            // VALIDATION AUTOMATIQUE AU 4ème CHIFFRE
             if (currentPin.length === 4) {
                 setTimeout(validerConnexion, 200);
             }
@@ -191,7 +213,6 @@
                     localStorage.setItem('user_nom', data.nom);
                     window.location.href = (roleCible === 'referent') ? '/page_referent' : '/page_technicien';
                 } else {
-                    // EFFET ERREUR IPHONE
                     const section = document.getElementById('auth-section');
                     section.classList.add('error-shake');
                     setTimeout(() => section.classList.remove('error-shake'), 300);
