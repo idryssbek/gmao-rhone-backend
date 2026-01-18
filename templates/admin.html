@@ -9,9 +9,9 @@
         
         /* Sidebar */
         .sidebar { width: 220px; background: var(--card); border-right: 1px solid var(--border); padding: 20px; display: flex; flex-direction: column; }
-        .nav-item { padding: 12px; cursor: pointer; border-radius: 8px; margin-bottom: 5px; color: #8b949e; transition: 0.2s; }
+        .nav-item { padding: 12px; cursor: pointer; border-radius: 8px; margin-bottom: 5px; color: #8b949e; transition: 0.2s; display: flex; align-items: center; gap: 10px; text-decoration: none; }
         .nav-item.active { background: #1f6feb; color: white; }
-        .nav-item:hover:not(.active) { background: #21262d; }
+        .nav-item:hover:not(.active) { background: #21262d; color: var(--accent); }
 
         /* Content */
         .main-content { flex: 1; padding: 30px; overflow-y: auto; }
@@ -24,19 +24,11 @@
         th { text-align: left; color: var(--accent); font-size: 0.75rem; text-transform: uppercase; padding: 12px; border-bottom: 2px solid var(--border); }
         td { padding: 12px; border-bottom: 1px solid #222; font-size: 0.9rem; }
         
-        /* Style spécifique pour la description */
-        .td-desc { 
-            max-width: 200px; 
-            overflow: hidden; 
-            text-overflow: ellipsis; 
-            white-space: nowrap; 
-            color: #94a3b8;
-            cursor: help;
-        }
+        .td-desc { max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: #94a3b8; cursor: help; }
 
         /* Bouton Menu Principal */
         .btn-home-floating {
-            position: fixed; bottom: 25px; left: 245px; /* Décalé pour ne pas chevaucher la sidebar */
+            position: fixed; bottom: 25px; left: 245px; 
             background: rgba(30, 41, 59, 0.8); color: var(--accent);
             border: 1px solid var(--accent); padding: 10px 18px;
             border-radius: 10px; text-decoration: none; font-weight: bold;
@@ -44,6 +36,10 @@
             display: flex; align-items: center; gap: 8px; font-size: 0.8rem;
         }
         .btn-home-floating:hover { background: var(--accent); color: #0d1117; transform: translateY(-3px); }
+
+        /* Filtres */
+        .filter-bar { display: flex; gap: 10px; margin-bottom: 15px; }
+        .filter-bar select { flex: 1; padding: 8px; background: #0d1117; border: 1px solid var(--border); color: white; border-radius: 6px; }
 
         /* Expansion Logic */
         .table-wrapper { max-height: 380px; overflow: hidden; position: relative; transition: max-height 0.4s ease; }
@@ -55,7 +51,6 @@
         input, select { background: #0d1117; border: 1px solid var(--border); color: white; padding: 10px; border-radius: 6px; width: 100%; margin-bottom: 10px; box-sizing: border-box; }
         .btn-add { background: #238636; color: white; border: none; padding: 12px; border-radius: 6px; cursor: pointer; font-weight: bold; width: 100%; }
         .btn-del { background: #da3633; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer; }
-        .pin-edit { width: 80px !important; text-align: center; margin-bottom: 0; padding: 5px; font-family: monospace; }
         
         .debug-sidebar { width: 280px; background: #000; border-left: 1px solid var(--accent); display: flex; flex-direction: column; }
         #debug-console { flex: 1; padding: 15px; font-family: monospace; font-size: 11px; overflow-y: auto; color: #0f0; }
@@ -68,11 +63,14 @@
     <a href="/" class="btn-home-floating">🏠 MENU PRINCIPAL</a>
 
     <div class="sidebar">
-        <h2 style="color:var(--accent); font-size: 1.2rem;">GMAO ADMIN</h2>
+        <h2 style="color:var(--accent); font-size: 1.2rem; margin-bottom: 20px;">GMAO ADMIN</h2>
         <div class="nav-item active" onclick="showTab('inter', this)">📋 Interventions</div>
         <div class="nav-item" onclick="showTab('equipe', this)">👥 Équipe</div>
         <div class="nav-item" onclick="showTab('lignes', this)">🏭 Lignes</div>
-        <button onclick="window.location.href='/api/export_csv'" style="margin-top:20px; background:#f59e0b; border:none; padding:10px; border-radius:6px; cursor:pointer; font-weight:bold;">📥 Export CSV</button>
+        
+        <a href="/admin/stats" class="nav-item" style="color: #fcd34d;">📊 Stats Live</a>
+        
+        <button onclick="window.location.href='/api/export_csv'" style="margin-top:20px; background:#f59e0b; border:none; padding:10px; border-radius:6px; cursor:pointer; font-weight:bold; color:black;">📥 Export CSV</button>
         <button onclick="window.location.href='/login'" style="margin-top:auto; background:#30363d; border:none; color:white; padding:10px; border-radius:6px; cursor:pointer;">Déconnexion</button>
     </div>
 
@@ -82,6 +80,16 @@
                 <h2>Historique Live</h2>
                 <div id="status-live" style="color:#22c55e; font-size:0.8rem;">● SYNCHRO LIVE ACTIVE</div>
             </div>
+
+            <div class="filter-bar">
+                <select id="filter-ligne" onchange="loadInterLive()">
+                    <option value="">Toutes les lignes</option>
+                </select>
+                <select id="filter-ref" onchange="loadInterLive()">
+                    <option value="">Tous les référents</option>
+                </select>
+            </div>
+
             <div class="card">
                 <div id="inter-wrapper" class="table-wrapper">
                     <table>
@@ -178,18 +186,31 @@
             }
         }
 
-        // --- LIVE HISTORIQUE AVEC DESCRIPTION ---
         async function loadInterLive() {
             try {
                 const res = await fetch('/api/historique_complet');
                 const data = await res.json();
-                const nouveauHtml = data.map(i => `
+                
+                // Remplir les filtres s'ils sont vides
+                remplirFiltres(data);
+
+                const filterLigne = document.getElementById('filter-ligne').value;
+                const filterRef = document.getElementById('filter-ref').value;
+
+                // Filtrage côté client
+                const filteredData = data.filter(i => {
+                    const matchLigne = !filterLigne || i.ligne_production === filterLigne;
+                    const matchRef = !filterRef || (i.nom_referent || i.nom_operateur_intervenant) === filterRef;
+                    return matchLigne && matchRef;
+                });
+
+                const nouveauHtml = filteredData.map(i => `
                     <tr>
                         <td>${new Date(i.date_saisie).toLocaleString('fr-FR', {day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit'})}</td>
                         <td><b>${i.ligne_production}</b></td>
                         <td>${i.machine_num}</td>
                         <td class="td-desc" title="${i.description || ''}">${i.description || '---'}</td>
-                        <td style="color:var(--accent)">${i.nom_referent || '---'}</td>
+                        <td style="color:var(--accent)">${i.nom_referent || i.nom_operateur_intervenant || '---'}</td>
                         <td><span style="color:${i.statut === 'en_attente' ? '#f59e0b':'#22c55e'}">${i.statut === 'en_attente' ? '⏳ ATTENTE':'✅ SAISI'}</span></td>
                         <td>
                             <button class="btn-del" style="background:#334155" onclick="changeStatut(${i.id})">ALT</button>
@@ -201,19 +222,32 @@
                 if (memoireHisto !== nouveauHtml) {
                     document.getElementById('table-inter').innerHTML = nouveauHtml;
                     memoireHisto = nouveauHtml;
-                    log("Mise à jour historique effectuée");
+                    log("Historique mis à jour (Filtré)");
                 }
             } catch (e) { log("Erreur Sync Live", true); }
         }
 
-        async function updatePin(userId, newPin) {
-            if(newPin.length !== 4) return;
-            await fetch('/api/admin/update_pin', {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({ user_id: userId, new_pin: newPin })
-            });
-            log("PIN mis à jour pour utilisateur ID: " + userId);
+        function remplirFiltres(data) {
+            const selectLigne = document.getElementById('filter-ligne');
+            const selectRef = document.getElementById('filter-ref');
+            
+            if(selectLigne.options.length > 1) return; // Déjà rempli
+
+            const lignes = [...new Set(data.map(i => i.ligne_production))].sort();
+            const refs = [...new Set(data.map(i => i.nom_referent || i.nom_operateur_intervenant))].filter(n => n).sort();
+
+            lignes.forEach(l => selectLigne.add(new Option(l, l)));
+            refs.forEach(r => selectRef.add(new Option(r, r)));
+        }
+
+        // --- AUTRES FONCTIONS (API) ---
+        async function addUser() {
+            const nomVal = document.getElementById('u-nom').value;
+            const pinVal = document.getElementById('u-pin').value;
+            if(!nomVal || !pinVal) return alert("Remplir Nom et PIN");
+            const d = { nom: nomVal, username: nomVal.replace(/\s+/g, '').toLowerCase(), password: pinVal, role: document.getElementById('u-role').value };
+            await fetch('/api/admin/users', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(d) });
+            loadUsers(); document.getElementById('u-nom').value = ""; document.getElementById('u-pin').value = "";
         }
 
         async function loadUsers() {
@@ -223,59 +257,27 @@
                 <tr>
                     <td>${u.nom_complet}</td>
                     <td>${u.role}</td>
-                    <td><input type="text" class="pin-edit" value="${u.password_hash}" maxlength="4" onchange="updatePin(${u.id}, this.value)"></td>
+                    <td><input type="text" class="pin-edit" style="width:60px; background:#000; border:1px solid #444; color:white; text-align:center;" value="${u.password_hash}" maxlength="4" onchange="updatePin(${u.id}, this.value)"></td>
                     <td><button class="btn-del" onclick="deleteUser(${u.id})">Supprimer</button></td>
                 </tr>
             `).join('');
         }
 
-        async function addUser() {
-            const nomVal = document.getElementById('u-nom').value;
-            const pinVal = document.getElementById('u-pin').value;
-            if(!nomVal || !pinVal) return alert("Remplir Nom et PIN");
-            
-            const d = { 
-                nom: nomVal, 
-                username: nomVal.replace(/\s+/g, '').toLowerCase(), 
-                password: pinVal, 
-                role: document.getElementById('u-role').value 
-            };
-            await fetch('/api/admin/users', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(d) });
-            loadUsers();
-            document.getElementById('u-nom').value = ""; document.getElementById('u-pin').value = "";
-        }
-
-        async function changeStatut(id) {
-            await fetch(`/api/update_statut/${id}`, { method: 'POST' });
-            loadInterLive();
-        }
-
-        async function delInter(id) { if(confirm("Supprimer cette intervention ?")) { await fetch(`/api/admin/delete_inter/${id}`, {method:'DELETE'}); loadInterLive(); } }
-        async function deleteUser(id) { if(confirm("Supprimer cet utilisateur ?")) { await fetch(`/api/admin/users/${id}`, {method:'DELETE'}); loadUsers(); } }
-        
+        async function updatePin(id, pin) { await fetch('/api/admin/update_pin', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ user_id: id, new_pin: pin }) }); log("PIN mis à jour"); }
+        async function deleteUser(id) { if(confirm("Supprimer ?")) { await fetch(`/api/admin/users/${id}`, {method:'DELETE'}); loadUsers(); } }
+        async function delInter(id) { if(confirm("Supprimer intervention ?")) { await fetch(`/api/admin/delete_inter/${id}`, {method:'DELETE'}); loadInterLive(); } }
+        async function changeStatut(id) { await fetch(`/api/update_statut/${id}`, { method: 'POST' }); loadInterLive(); }
         async function loadLignes() {
             const res = await fetch('/api/lignes');
             const data = await res.json();
-            document.getElementById('list-lignes').innerHTML = data.map(l => `
-                <div style="display:flex; justify-content:space-between; padding:10px; border-bottom:1px solid #333;">
-                    <span>${l.nom_ligne}</span>
-                    <button class="btn-del" onclick="deleteLigne(${l.id})">Effacer</button>
-                </div>
-            `).join('');
+            document.getElementById('list-lignes').innerHTML = data.map(l => `<div style="display:flex; justify-content:space-between; padding:10px; border-bottom:1px solid #333;"><span>${l.nom_ligne}</span><button class="btn-del" onclick="deleteLigne(${l.id})">Effacer</button></div>`).join('');
         }
-        
-        async function addLigne() {
-            const nom = document.getElementById('l-nom').value;
-            if(!nom) return;
-            await fetch('/api/lignes', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ nom }) });
-            document.getElementById('l-nom').value = ""; loadLignes();
-        }
-        
+        async function addLigne() { const nom = document.getElementById('l-nom').value; if(!nom) return; await fetch('/api/lignes', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ nom }) }); document.getElementById('l-nom').value = ""; loadLignes(); }
         async function deleteLigne(id) { await fetch(`/api/lignes/${id}`, { method: 'DELETE' }); loadLignes(); }
 
         window.onload = () => {
             loadInterLive();
-            setInterval(loadInterLive, 2000); 
+            setInterval(loadInterLive, 3000); 
         };
     </script>
 </body>
