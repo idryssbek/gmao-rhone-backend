@@ -3,213 +3,240 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>GMAO - Connexion</title>
+    <title>GMAO - Identification</title>
     <style>
         :root {
-            --bg: #0d1117;
-            --card: #161b22;
-            --border: #30363d;
+            --bg: #0f172a;
+            --card-bg: #1e293b;
             --accent: #38bdf8;
-            --text: #c9d1d9;
-            --tech-color: #38bdf8;
-            --ref-color: #f59e0b;
+            --text: #f1f5f9;
         }
 
-        body {
-            margin: 0;
-            font-family: 'Inter', -apple-system, sans-serif;
-            background-color: var(--bg);
-            color: var(--text);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            height: 100vh;
+        body { 
+            background: var(--bg); color: var(--text); 
+            font-family: 'Inter', system-ui, sans-serif; 
+            margin: 0; display: flex; justify-content: center; align-items: center; 
+            min-height: 100vh; padding: 20px; overflow: hidden;
         }
 
-        .login-container {
-            width: 100%;
-            max-width: 400px;
-            padding: 20px;
+        .login-container { width: 100%; max-width: 1000px; text-align: center; padding-bottom: 80px; }
+
+        h2 { font-weight: 600; text-transform: uppercase; color: var(--accent); margin-bottom: 40px; font-size: 1.5rem; letter-spacing: 1px; }
+
+        /* Grille Utilisateurs */
+        .user-grid { 
+            display: grid; 
+            grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); 
+            gap: 20px; 
+            animation: fadeIn 0.5s ease;
         }
 
-        .card {
-            background: var(--card);
-            border: 1px solid var(--border);
-            border-radius: 12px;
-            padding: 30px;
-            box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+        .user-card { 
+            background: var(--card-bg); 
+            border: 2px solid #334155; 
+            padding: 40px 20px; 
+            border-radius: 20px; 
+            cursor: pointer; 
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
-        h1 {
-            text-align: center;
-            font-size: 1.5rem;
-            margin-bottom: 30px;
-            letter-spacing: 1px;
-            color: white;
-            text-transform: uppercase;
-        }
+        .user-card:hover { border-color: var(--accent); background: #243146; transform: translateY(-5px); }
+        .user-card:active { transform: scale(0.98); }
+        .user-name { font-weight: 600; font-size: 1.3rem; }
 
-        .role-selection {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 15px;
-            margin-bottom: 25px;
-        }
+        /* Section PIN Style iPhone */
+        #auth-section { display: none; animation: slideUp 0.4s ease-out; }
 
-        /* Remplacement des emojis par des boutons stylisés */
-        .role-btn {
-            background: transparent;
-            border: 1px solid var(--border);
-            padding: 15px 10px;
-            border-radius: 8px;
-            cursor: pointer;
-            text-align: center;
+        .pin-header { margin-bottom: 30px; }
+        .pin-header h1 { font-size: 1.6rem; margin-bottom: 10px; }
+        .pin-header p { color: #94a3b8; font-size: 1rem; }
+
+        .pin-dots { 
+            display: flex; justify-content: center; gap: 25px; margin-bottom: 50px; 
+        }
+        .dot { 
+            width: 18px; height: 18px; border: 2px solid var(--accent); 
+            border-radius: 50%; transition: all 0.2s; 
+        }
+        .dot.filled { background: var(--accent); box-shadow: 0 0 15px var(--accent); }
+
+        /* Pavé Numérique */
+        .numpad { 
+            display: grid; grid-template-columns: repeat(3, 1fr); 
+            gap: 20px; width: 280px; margin: 0 auto; 
+        }
+        .num-btn { 
+            width: 75px; height: 75px; border-radius: 50%; 
+            background: #1e293b; color: white; border: 1px solid #334155; 
+            font-size: 1.8rem; cursor: pointer; transition: all 0.1s;
+            display: flex; align-items: center; justify-content: center;
+        }
+        .num-btn:active { background: white; color: black; }
+        .num-btn.special { border: none; background: transparent; font-size: 1rem; color: #94a3b8; }
+
+        /* BOUTON RETOUR MENU */
+        .btn-home {
+            position: fixed; bottom: 30px;
+            background: rgba(30, 41, 59, 0.95);
+            color: var(--accent);
+            border: 1px solid var(--accent);
+            padding: 12px 25px;
+            border-radius: 50px;
+            text-decoration: none;
+            font-weight: bold;
+            display: flex; align-items: center; gap: 10px;
             transition: 0.3s;
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.4);
+            backdrop-filter: blur(5px);
+            z-index: 1000;
         }
+        .btn-home:hover { background: var(--accent); color: var(--bg); }
 
-        .role-btn span {
-            font-size: 0.75rem;
-            font-weight: bold;
-            letter-spacing: 0.5px;
-            color: #8b949e;
-        }
-
-        /* Style Technicien */
-        .role-btn.tech:hover, .role-btn.tech.active {
-            border-color: var(--tech-color);
-            background: rgba(56, 189, 248, 0.05);
-        }
-        .role-btn.tech.active span { color: var(--tech-color); }
-
-        /* Style Référent */
-        .role-btn.ref:hover, .role-btn.ref.active {
-            border-color: var(--ref-color);
-            background: rgba(245, 158, 11, 0.05);
-        }
-        .role-btn.ref.active span { color: var(--ref-color); }
-
-        .input-group {
-            margin-bottom: 20px;
-        }
-
-        label {
-            display: block;
-            font-size: 0.8rem;
-            margin-bottom: 8px;
-            color: #8b949e;
-        }
-
-        input {
-            width: 100%;
-            padding: 12px;
-            background: #0d1117;
-            border: 1px solid var(--border);
-            border-radius: 6px;
-            color: white;
-            font-size: 1rem;
-            box-sizing: border-box;
-            transition: 0.2s;
-        }
-
-        input:focus {
-            outline: none;
-            border-color: var(--accent);
-        }
-
-        .btn-login {
-            width: 100%;
-            padding: 14px;
-            background: var(--accent);
-            border: none;
-            border-radius: 6px;
-            color: #0d1117;
-            font-weight: bold;
-            font-size: 1rem;
-            cursor: pointer;
-            transition: 0.2s;
-            text-transform: uppercase;
-        }
-
-        .btn-login:hover {
-            opacity: 0.9;
-            transform: translateY(-1px);
-        }
-
-        #error-msg {
-            color: #ef4444;
-            font-size: 0.85rem;
-            text-align: center;
-            margin-top: 15px;
-            display: none;
-        }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes slideUp { from { transform: translateY(30px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+        @keyframes shake { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-10px); } 75% { transform: translateX(10px); } }
+        .error-shake { animation: shake 0.3s ease-in-out; }
     </style>
 </head>
 <body>
 
     <div class="login-container">
-        <div class="card">
-            <h1>Accès GMAO</h1>
-            
-            <div class="role-selection">
-                <div id="btn-tech" class="role-btn tech active" onclick="setRole('technicien')">
-                    <span>TECHNICIEN</span>
-                </div>
-                <div id="btn-ref" class="role-btn ref" onclick="setRole('referent')">
-                    <span>RÉFÉRENT</span>
-                </div>
+        <h2 id="page-title">Chargement des utilisateurs...</h2>
+        
+        <div id="user-list" class="user-grid"></div>
+
+        <div id="auth-section">
+            <div class="pin-header">
+                <h1 id="selected-user-name">Prénom</h1>
+                <p>Saisissez votre code PIN</p>
             </div>
 
-            <div class="input-group">
-                <label>VOTRE CODE PIN</label>
-                <input type="password" id="pin" placeholder="••••" maxlength="4" inputmode="numeric">
+            <div class="pin-dots" id="pin-dots">
+                <div class="dot"></div>
+                <div class="dot"></div>
+                <div class="dot"></div>
+                <div class="dot"></div>
             </div>
 
-            <button class="btn-login" onclick="login()">Se connecter</button>
-            <div id="error-msg">Code PIN incorrect</div>
+            <div class="numpad">
+                <button class="num-btn" onclick="pressNum('1')">1</button>
+                <button class="num-btn" onclick="pressNum('2')">2</button>
+                <button class="num-btn" onclick="pressNum('3')">3</button>
+                <button class="num-btn" onclick="pressNum('4')">4</button>
+                <button class="num-btn" onclick="pressNum('5')">5</button>
+                <button class="num-btn" onclick="pressNum('6')">6</button>
+                <button class="num-btn" onclick="pressNum('7')">7</button>
+                <button class="num-btn" onclick="pressNum('8')">8</button>
+                <button class="num-btn" onclick="pressNum('9')">9</button>
+                <button class="num-btn special" onclick="location.reload()">ANNULER</button>
+                <button class="num-btn" onclick="pressNum('0')">0</button>
+                <button class="num-btn special" onclick="pressNum('del')">EFFACER</button>
+            </div>
         </div>
     </div>
 
+    <a href="/" class="btn-home">
+        🏠 MENU PRINCIPAL
+    </a>
+
     <script>
-        let selectedRole = 'technicien';
+        const params = new URLSearchParams(window.location.search);
+        const roleCible = params.get('role') || 'technicien';
+        let currentPin = "";
+        let selectedUser = null;
 
-        function setRole(role) {
-            selectedRole = role;
-            document.getElementById('btn-tech').classList.remove('active');
-            document.getElementById('btn-ref').classList.remove('active');
-            
-            if(role === 'technicien') {
-                document.getElementById('btn-tech').classList.add('active');
-            } else {
-                document.getElementById('btn-ref').classList.add('active');
-            }
-        }
+        function displayUsers(users) {
+            const container = document.getElementById('user-list');
+            if (!container) return;
+            container.innerHTML = "";
 
-        async function login() {
-            const pin = document.getElementById('pin').value;
-            if(!pin) return;
+            const filtres = users.filter(u => 
+                u.role.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").includes(roleCible) 
+                && u.username.toLowerCase() !== 'admin'
+            );
 
-            const res = await fetch('/api/login', {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({ pin, role: selectedRole })
+            document.getElementById('page-title').innerText = `Espace ${roleCible.toUpperCase()}`;
+
+            filtres.forEach(u => {
+                const card = document.createElement('div');
+                card.className = 'user-card';
+                card.innerHTML = `<div class="user-name">${u.nom_complet}</div>`;
+                card.onclick = () => {
+                    selectedUser = u;
+                    if(roleCible === 'referent') validerConnexion();
+                    else showNumpad(u.nom_complet);
+                };
+                container.appendChild(card);
             });
+        }
 
-            if(res.ok) {
-                window.location.href = '/';
-            } else {
-                const err = document.getElementById('error-msg');
-                err.style.display = 'block';
-                setTimeout(() => err.style.display = 'none', 3000);
+        function showNumpad(name) {
+            document.getElementById('user-list').style.display = 'none';
+            document.getElementById('page-title').style.display = 'none';
+            document.getElementById('auth-section').style.display = 'block';
+            document.getElementById('selected-user-name').innerText = name;
+        }
+
+        function updateDots() {
+            const dots = document.querySelectorAll('.dot');
+            dots.forEach((dot, index) => {
+                if (index < currentPin.length) dot.classList.add('filled');
+                else dot.classList.remove('filled');
+            });
+        }
+
+        function pressNum(n) {
+            if (n === 'del') {
+                currentPin = currentPin.slice(0, -1);
+            } else if (currentPin.length < 4) {
+                currentPin += n;
+            }
+            updateDots();
+
+            if (currentPin.length === 4) {
+                setTimeout(validerConnexion, 200);
             }
         }
 
-        // Connexion avec la touche Entrée
-        document.getElementById('pin').addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') login();
-        });
+        async function validerConnexion() {
+            const url = (roleCible === 'referent') ? '/api/login_sans_pin' : '/login_gmao';
+            try {
+                const res = await fetch(url, {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ username: selectedUser.username, password: currentPin })
+                });
+                const data = await res.json();
+                
+                if(data.status === "success") {
+                    localStorage.setItem('user_id', data.id);
+                    localStorage.setItem('user_nom', data.nom);
+                    window.location.href = (roleCible === 'referent') ? '/page_referent' : '/page_technicien';
+                } else {
+                    const section = document.getElementById('auth-section');
+                    section.classList.add('error-shake');
+                    setTimeout(() => section.classList.remove('error-shake'), 300);
+                    currentPin = "";
+                    updateDots();
+                }
+            } catch (e) {
+                alert("Erreur de connexion serveur");
+            }
+        }
+
+        async function init() {
+            const cached = localStorage.getItem(`cache_users_${roleCible}`);
+            if(cached) displayUsers(JSON.parse(cached));
+
+            try {
+                const res = await fetch('/api/admin/users');
+                const users = await res.json();
+                displayUsers(users);
+                localStorage.setItem(`cache_users_${roleCible}`, JSON.stringify(users));
+            } catch (e) { console.log("Erreur sync"); }
+        }
+
+        init();
     </script>
 </body>
 </html>
