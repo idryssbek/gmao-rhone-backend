@@ -232,7 +232,22 @@ def export_csv():
         return jsonify({"status": "error", "message": str(e)}), 500
     finally:
         if conn: conn.close()
-
+# --- FONCTION DE NETTOYAGE TOTAL ---
+@app.route('/api/admin/delete_all_interventions', methods=['DELETE'])
+def delete_all_interventions():
+    conn = None
+    try:
+        conn = get_db_connection()
+        cur = conn.cursor()
+        # Supprime toutes les lignes de la table interventions
+        cur.execute("DELETE FROM interventions")
+        conn.commit()
+        cur.close()
+        return jsonify({"status": "success", "message": "Historique vidé"}), 200
+    except Exception as e:
+        return jsonify({"status": "error", "message": str(e)}), 500
+    finally:
+        if conn: conn.close()
 if __name__ == "__main__":
     initialisation_automatique() 
     app.run(host='0.0.0.0', port=int(os.environ.get("PORT", 10000)))
