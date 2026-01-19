@@ -159,6 +159,17 @@
                 <button class="btn-add" style="width:200px" onclick="addLigne()">CRÉER</button>
             </div>
             <div id="list-lignes" class="card"></div>
+
+            <div style="margin-top: 50px; padding: 20px; border: 1px dashed #ef4444; border-radius: 12px; background: rgba(239, 68, 68, 0.05);">
+                <h3 style="color: #ef4444; margin-top: 0;">⚠️ Zone de Danger</h3>
+                <p style="font-size: 0.85rem; color: #94a3b8; margin-bottom: 15px;">
+                    Cette action supprimera <b>définitivement</b> toutes les interventions enregistrées. 
+                    Les lignes et le personnel ne seront pas affectés.
+                </p>
+                <button onclick="deleteAllInterventions()" style="background: #ef4444; color: white; border: none; padding: 12px 20px; border-radius: 6px; cursor: pointer; font-weight: bold; width: 100%;">
+                    🗑️ VIDER TOUT L'HISTORIQUE DES INTERVENTIONS
+                </button>
+            </div>
         </div>
     </div>
 
@@ -171,7 +182,7 @@
         let isInterExpanded = false;
         let memoireHisto = "";
         let charts = {};
-        let allInterventions = []; // Stockage local pour la modale
+        let allInterventions = [];
 
         function log(msg, err=false) {
             const c = document.getElementById('debug-console');
@@ -181,7 +192,29 @@
             }
         }
 
-        // --- NOUVELLES FONCTIONS MODALE & COPIE ---
+        // --- FONCTION DE SUPPRESSION TOTALE ---
+        async function deleteAllInterventions() {
+            if (confirm("⚠️ ATTENTION : Voulez-vous vraiment supprimer TOUT l'historique ? Cette action est irréversible.")) {
+                const confirmation = prompt("Pour valider, tapez le mot : CONFIRMER");
+                
+                if (confirmation === "CONFIRMER") {
+                    try {
+                        const res = await fetch('/api/admin/delete_all_interventions', { method: 'DELETE' });
+                        if (res.ok) {
+                            alert("L'historique a été vidé avec succès.");
+                            loadInterLive(); // Rafraîchit les données
+                        } else {
+                            alert("Erreur lors de la suppression.");
+                        }
+                    } catch (e) {
+                        log("Erreur lors de la purge", true);
+                    }
+                } else {
+                    alert("Action annulée (mot de confirmation incorrect).");
+                }
+            }
+        }
+
         function openDetail(id) {
             const inter = allInterventions.find(x => x.id === id);
             if(!inter) return;
@@ -219,7 +252,6 @@
             });
         }
 
-        // --- TES FONCTIONS EXISTANTES (MODIFIÉES POUR LE CLIC) ---
         function showTab(id, el) {
             document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
             document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
@@ -246,7 +278,7 @@
             try {
                 const res = await fetch('/api/historique_complet');
                 const data = await res.json();
-                allInterventions = data; // On garde en mémoire
+                allInterventions = data;
                 
                 const selL = document.getElementById('filter-ligne');
                 const selR = document.getElementById('filter-ref');
@@ -317,7 +349,6 @@
             });
         }
 
-        // --- PERSONNEL & LIGNES (INCHANGÉS) ---
         async function loadUsers() {
             const res = await fetch('/api/admin/users');
             const data = await res.json();
