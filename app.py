@@ -67,7 +67,6 @@ def page_technicien(): return render_template('technicien.html')
 @app.route('/admin')
 def page_admin(): return render_template('admin.html')
 
-# NOUVELLE ROUTE POUR LES STATS
 @app.route('/admin/stats')
 def page_stats(): return render_template('admin_stats.html')
 
@@ -110,7 +109,6 @@ def delete_ligne(id):
     return jsonify({"status": "deleted"})
 
 # --- API INTERVENTIONS ---
-
 @app.route('/api/save_intervention', methods=['POST'])
 def save_intervention():
     data = request.json
@@ -123,7 +121,6 @@ def save_intervention():
     conn.commit(); cur.close(); conn.close()
     return jsonify({"status": "success"})
 
-# MISE À JOUR : On s'assure que le nom_referent est bien récupéré pour les graphiques
 @app.route('/api/historique_complet')
 def get_historique_complet():
     conn = get_db_connection(); cur = conn.cursor()
@@ -193,28 +190,48 @@ def delete_user(id):
     conn.commit(); cur.close(); conn.close()
     return jsonify({"status": "success"})
 
-# --- EXPORT ---
+# --- EXPORT (CORRIGÉ) ---
 @app.route('/api/export_csv')
 def export_csv():
-    conn = get_db_connection(); cur = conn.cursor()
-    cur.execute("""
-        SELECT i.*, u.nom_complet as referent 
-        FROM interventions i 
-        LEFT JOIN gmao_users u ON i.id_referent = u.id
-        ORDER BY i.date_saisie DESC
-    """)
-    rows = cur.fetchall()
-    output = io.StringIO()
-    writer = csv.writer(output)
-    writer.writerow(['ID', 'Date', 'Ligne', 'Machine', 'Référent', 'Description', 'Statut'])
-    for r in rows:
-        writer.writerow([r['id'], r['date_saisie'], r['ligne_production'], r['machine_num'], r['nom_referent'], r['description'], r['statut']])
-    
-    return Response(
-        output.getvalue(),
-        mimetype="text/csv",
-        headers={"Content-disposition": "attachment; filename=gmao_export.csv"}
-    )
+    conn = None
+    try:
+        conn = get_db_connection()
+        cur = conn.cursor()
+        cur.execute("""
+            SELECT i.*, u.nom_complet as referent 
+            FROM interventions i 
+            LEFT JOIN gmao_users u ON i.id_referent = u.id
+            ORDER BY i.date_saisie DESC
+        """)
+        rows = cur.fetchall()
+        
+        output = io.StringIO()
+        writer = csv.writer(output)
+        writer.writerow(['ID', 'Date', 'Ligne', 'Machine', 'Référent', 'Description', 'Statut'])
+        
+        for r in rows:
+            # Correction : on utilise 'referent' qui est l'alias du SELECT
+            writer.writerow([
+                r['id'], 
+                r['date_saisie'], 
+                r['ligne_production'], 
+                r['machine_num'], 
+                r.get('referent', 'N/A'), 
+                r['description'], 
+                r['statut']
+            ])
+        
+        cur.close()
+        return Response(
+            output.getvalue(),
+            mimetype="text/csv",
+            headers={"Content-disposition": "attachment; filename=gmao_export.csv"}
+        )
+    except Exception as e:
+        print(f"❌ Erreur Export : {e}")
+        return jsonify({"status": "error", "message": str(e)}), 500
+    finally:
+        if conn: conn.close()
 
 if __name__ == "__main__":
     initialisation_automatique() 
