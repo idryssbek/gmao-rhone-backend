@@ -208,7 +208,7 @@ def export_csv():
     writer = csv.writer(output)
     writer.writerow(['ID', 'Date', 'Ligne', 'Machine', 'Référent', 'Description', 'Statut'])
     for r in rows:
-        writer.writerow([r['id'], r['date_saisie'], r['ligne_production'], r['machine_num'], r['nom_referent'], r['description'], r['statut']])
+        writer.writerow([r['id'], r['date_saisie'], r['ligne_production'], r['machine_num'], r['referent'], r['description'], r['statut']])
     
     return Response(
         output.getvalue(),
